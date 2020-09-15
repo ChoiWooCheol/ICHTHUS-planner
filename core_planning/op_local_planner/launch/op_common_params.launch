@@ -1,0 +1,110 @@
+<!-- -->
+<launch>
+
+	<arg name="mapSource" 					default="0" /> <!-- Autoware=0, Vector Map Folder=1, kml=2, lanelet2 file=3, kml map file path from runtime manager = 4 -->
+	<arg name="mapFileName" 				default="" />
+	<arg name="lanelet2_origin"				default="0,0,0," /> <!-- GPS origin for lanelet2 map files, Lat, Long, Alt  -->
+		
+	<arg name="pathDensity" 				default="0.5" /> <!-- check ok --> 
+	<arg name="rollOutDensity" 				default="0.5" /> <!-- check ok -->
+	<arg name="rollOutsNumber" 				default="6"    /> <!-- check ok -->
+		
+	<arg name="maxLocalPlanDistance" 		default="50" />	<!-- check ok -->
+	<arg name="horizonDistance" 			default="200"  /> <!-- check ok -->
+	
+	<arg name="minFollowingDistance" 		default="35.0"  /> <!-- check ok --> <!-- should be bigger than Distance to follow --> 
+	<arg name="minDistanceToAvoid" 			default="20.0" /> <!-- check ok --> <!-- should be smaller than minFollowingDistance and larger than maxDistanceToAvoid -->
+	<arg name="maxDistanceToAvoid" 			default="5.0"  /> <!-- check ok --> <!-- should be smaller than minDistanceToAvoid -->
+	<arg name="speedProfileFactor"			default="0.8"  /> 
+	
+	<arg name="smoothingDataWeight"			default="0.4"  /> <!-- used in op_trajectory_generator -->
+	<arg name="smoothingSmoothWeight"		default="0.45"  />	<!-- used in op_trajectory_generator -->
+	
+	<arg name="horizontalSafetyDistance"	default="1.2"  />
+	<arg name="verticalSafetyDistance"		default="0.8"  />
+	
+	<arg name="enableSwerving" 				default="true"  /> <!-- check ok : enable avoidance --> 
+	<arg name="enableFollowing" 			default="true" />	
+	<arg name="enableTrafficLightBehavior" 	default="false" />
+	<arg name="enableStopSignBehavior" 		default="false" />	
+	<arg name="enableLaneChange" 			default="true" />	
+	
+	<!-- Vehicle Info, shared with controller and simulation --> <!-- check ok -->
+	<arg name="width" 						default="1.85"  />
+	<arg name="length" 						default="4.2"  />
+	<arg name="wheelBaseLength" 			default="2.7"  />
+	<arg name="turningRadius"				default="5.2"  />
+	<arg name="maxWheelAngle" 				default="0.45" /> <!-- radians -->
+	<arg name="steeringDelay" 				default="1.2" /> <!-- time steering wheel take to turn from zero to max left or right -->
+	<arg name="minPursuiteDistance" 		default="3.0" /> <!-- min distance to forward following target point on the trajectory  -->
+	<arg name="maxAcceleration" 			default="3.0" /> <!-- m/s*s -->
+	<arg name="maxDeceleration" 			default="-3.0" /> <!-- m/s*s -->
+	<arg name="maxVelocity" 				default="6.0" /> <!-- m/s -->
+	<arg name="minVelocity" 				default="0.1" /> <!-- m/s -->
+	<!-- ................................................... -->
+	
+	<arg name="additionalBrakingDistance" 	default="1.0"  />
+	<arg name="goalDiscoveryDistance" 		default="1.0"  />
+	
+	<arg name="giveUpDistance" 				default="-1.0"  />
+			
+	<arg name="velocitySource"				default="1" /> <!-- read velocities from (0- Odometry, 1- autoware current_velocities, 2- car_info, 3- vehicle status ) "" -->
+	<arg name="vel_odom_topic"				default="/carla/ego_vehicle/odometry" />
+	<arg name="vel_curr_topic"				default="/current_velocity" />
+	<arg name="vel_can_topic"				default="/can_info" />
+	<arg name="vehicle_status_topic"		default="/vehicle_status" />
+			
+	<arg name="experimentName" 				default="" />		
+	
+	<arg name="objects_input_topic" 		default="/detection/contour_tracker/objects" /> <!-- check ok -->
+
+	<node pkg="op_local_planner" type="op_common_params" name="op_common_params" output="screen">	
+		<param name="mapSource" 				value="$(arg mapSource)" /> <!-- Autoware=0, Vector Map Folder=1, kml=2 -->
+		<param name="mapFileName" 				value="$(arg mapFileName)" />
+		<param name="lanelet2_origin" 			value="$(arg lanelet2_origin)" />
+				
+		<param name="pathDensity" 			    value="$(arg pathDensity)" />
+		<param name="rollOutDensity" 			value="$(arg rollOutDensity)" />
+		<param name="rollOutsNumber" 			value="$(arg rollOutsNumber)"    />
+					
+		<param name="maxLocalPlanDistance" 		value="$(arg maxLocalPlanDistance)" />	
+		<param name="horizonDistance" 			value="$(arg horizonDistance)" />	
+		<param name="minFollowingDistance" 		value="$(arg minFollowingDistance)"  /> 	
+		<param name="minDistanceToAvoid" 		value="$(arg minDistanceToAvoid)" /> 
+		<param name="maxDistanceToAvoid" 		value="$(arg maxDistanceToAvoid)"  /> 
+		<param name="speedProfileFactor"		value="$(arg speedProfileFactor)"  />	
+		<param name="smoothingDataWeight"		value="$(arg smoothingDataWeight)"  />
+		<param name="smoothingSmoothWeight"		value="$(arg smoothingSmoothWeight)"  />	
+		<param name="horizontalSafetyDistance"	value="$(arg horizontalSafetyDistance)"  />
+		<param name="verticalSafetyDistance"	value="$(arg verticalSafetyDistance)"  />	
+		<param name="enableSwerving" 			value="$(arg enableSwerving)"  />
+		<param name="enableFollowing" 			value="$(arg enableFollowing)" />	
+		<param name="enableTrafficLightBehavior" value="$(arg enableTrafficLightBehavior)" />
+		<param name="enableStopSignBehavior" 	value="$(arg enableStopSignBehavior)" />	
+		<param name="enableLaneChange" 			value="$(arg enableLaneChange)" />
+				
+		<param name="width" 					value="$(arg width)"  />
+		<param name="length" 					value="$(arg length)"  />
+		<param name="wheelBaseLength" 			value="$(arg wheelBaseLength)"  />
+		<param name="turningRadius"				value="$(arg turningRadius)"  />
+		<param name="maxWheelAngle" 			value="$(arg maxWheelAngle)" />
+		<param name="steeringDelay" 			value="$(arg steeringDelay)" />
+		<param name="minPursuiteDistance" 		value="$(arg minPursuiteDistance)"  />
+		<param name="maxAcceleration" 			value="$(arg maxAcceleration)" />
+		<param name="maxDeceleration" 			value="$(arg maxDeceleration)" />
+		<param name="maxVelocity" 				value="$(arg maxVelocity)" />
+		<param name="minVelocity" 				value="$(arg minVelocity)" />
+			
+		<param name="additionalBrakingDistance" value="$(arg additionalBrakingDistance)"  />
+		<param name="goalDiscoveryDistance" 	value="$(arg goalDiscoveryDistance)"  />
+		<param name="giveUpDistance" 			value="$(arg giveUpDistance)"  />
+		<param name="velocitySource"			value="$(arg velocitySource)" /> 
+		<param name="vel_odom_topic"			value="$(arg vel_odom_topic)" />
+		<param name="vel_curr_topic"			value="$(arg vel_curr_topic)" />
+		<param name="vel_can_topic"				value="$(arg vel_can_topic)" />			
+		<param name="vehicle_status_topic"		value="$(arg vehicle_status_topic)" />
+		<param name="experimentName" 			value="$(arg experimentName)" />	
+		<param name="objects_input_topic" 		value="$(arg objects_input_topic)" />	
+	</node>				
+			
+</launch>

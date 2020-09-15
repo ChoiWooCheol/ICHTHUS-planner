@@ -1,0 +1,32 @@
+<launch>
+	<!-- Trajectory Evaluation Specific Parameters -->
+	
+	<arg name="enablePrediction" default="false" />	 				 		
+	<arg name="keepCurrentTrajectory" default="true" />
+	
+	<!-- all weights sum must equal 1 -->
+	<!-- ............................ -->
+	<arg name="weight_priority" 	default="0.2"/>
+	<arg name="weight_transition" 	default="0.2"/>
+	<arg name="weight_longitudinal" default="0.2"/>
+	<arg name="weight_lateral" 		default="0.2"/>
+	<arg name="weight_lane_change" 	default="0.2"/>
+	<!-- ............................ -->
+	
+	<arg name="collision_time" 	default="6"/> <!-- in seconds -->
+			
+	<node pkg="op_local_planner" type="op_trajectory_evaluator" name="op_trajectory_evaluator" output="screen">
+	
+		<param name="enablePrediction" value="$(arg enablePrediction)" />											
+		<param name="keepCurrentTrajectory" value="$(arg keepCurrentTrajectory)" />
+		
+		<param name="weight_priority" value="$(arg weight_priority)" />
+		<param name="weight_transition" value="$(arg weight_transition)" />
+		<param name="weight_longitudinal" value="$(arg weight_longitudinal)" />
+		<param name="weight_lateral" value="$(arg weight_lateral)" />
+		<param name="weight_lane_change" value="$(arg weight_lane_change)" />		
+		<param name="collision_time" value="$(arg collision_time)" />
+			
+	</node>				
+			
+</launch>

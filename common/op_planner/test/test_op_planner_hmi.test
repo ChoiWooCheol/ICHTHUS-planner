@@ -1,0 +1,3 @@
+<launch>
+  <test test-name="test-op_planner_hmi" pkg="op_planner" type="test-op_planner_hmi" name="test"/>
+</launch>
