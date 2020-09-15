@@ -509,11 +509,11 @@ void DecisionMaker::SetMaxVelocityParam(double max_speed)
 			double deceleration_critical = 0;
 			double distance_to_stop = followDistance -  critical_long_front_distance - m_params.additionalBrakingDistance;
 			double sudden_stop_distance = -pow((CurrStatus.speed - beh.followVelocity), 2)/m_CarInfo.max_deceleration;
-
+			ROS_ERROR("bd : %f", m_params.additionalBrakingDistance);
 			/* sum(weights) must be 1 */
 			double f_distanceRateVelocity = 0.5 * followDistance * 0.15; // weight1 * (distance / time)
-			double f_velocityRateVelocity = 0.3 * beh.followVelocity; 		 // weight2 * followVelocity
-			double c_velocityRateVelocity = 0.2 * CurrStatus.speed; 		 // weight3 * currentVelocity
+			double f_velocityRateVelocity = 0.3 * beh.followVelocity; 	 // weight2 * followVelocity
+			double c_velocityRateVelocity = 0.2 * CurrStatus.speed; 	 // weight3 * currentVelocity
 			double m_newDesiredVelocity = f_distanceRateVelocity + f_velocityRateVelocity + c_velocityRateVelocity;
 
 			if(distance_to_stop != 0)
@@ -524,17 +524,13 @@ void DecisionMaker::SetMaxVelocityParam(double max_speed)
 			if(deceleration_critical >= 0)
 			{
 				deceleration_critical = m_CarInfo.max_deceleration;
-				desiredVelocity = deceleration_critical * dt + CurrStatus.speed;
 			}
-			else
-			{	
-				// ROS_ERROR("followDistance       : %2f", followDistance);
-				// ROS_ERROR("myCurrentSpeed       : %2f", CurrStatus.speed);
-				// ROS_ERROR("followVelocity       : %2f", beh.followVelocity);
-				// ROS_ERROR("m_newDesiredVelocity : %2f", m_newDesiredVelocity);
-				desiredVelocity = std::min(beh.followVelocity, m_newDesiredVelocity);
-			}
-			
+
+			desiredVelocity = std::min(deceleration_critical * dt + CurrStatus.speed, m_newDesiredVelocity);
+			//desiredVelocity = std::min(beh.followVelocity, m_newDesiredVelocity);
+
+			if(desiredVelocity < 0.0) desiredVelocity = 0.0;
+
 			if(beh.followVelocity > max_velocity) desiredVelocity = max_velocity;
 			// else if(beh.followVelocity > CurrStatus.speed)
 			// {
