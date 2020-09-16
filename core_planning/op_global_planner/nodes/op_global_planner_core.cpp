@@ -581,17 +581,6 @@ bool GlobalPlanner::checkOverlapLanes(const autoware_msgs::LaneArray& lane_array
 	// int overlap_lane_count = 0;
 	int overlap_waypoint_count = 0;
 
-	// for(auto& lane : lane_array.lanes)
-    // {
-    //     for(auto& waypoint : lane.waypoints)
-    //     {
-    //         if(checkDistance(m_CurrentPose, waypoint.pose.pose.position.x, waypoint.pose.pose.position.y))
-    //         {
-    //             overlap_lane_count++;
-    //             break;
-    //         }
-    //     }
-    // }
 
 	if(lane_array.lanes.size() > 1)
 	{
@@ -632,7 +621,7 @@ void GlobalPlanner::VisualizeAndSend(const std::vector<std::vector<PlannerHNS::W
 	PlannerHNS::ROSHelpers::createGlobalLaneArrayMarker(total_color, lane_array, pathsToVisualize);
 	PlannerHNS::ROSHelpers::createGlobalLaneArrayOrientationMarker(lane_array, pathsToVisualize);
 	PlannerHNS::ROSHelpers::createGlobalLaneArrayVelocityMarker(lane_array, pathsToVisualize);
-
+/*
 	int min_gid;
 	if(lane_array.lanes.size() > 2)
 	{
@@ -670,7 +659,8 @@ void GlobalPlanner::VisualizeAndSend(const std::vector<std::vector<PlannerHNS::W
 		min_gid = lane_array.lanes[0].waypoints[0].gid;
 	}
 
-/* if replanning is done, this code has some problem that first pose must be overlaped. */
+// if replanning is done, this code has some problem that first pose must be overlaped. 
+
 	if(checkOverlapLanes(lane_array))
 	{
 		for(size_t i = 0; i < lane_array.lanes.size(); ++i)
@@ -682,7 +672,7 @@ void GlobalPlanner::VisualizeAndSend(const std::vector<std::vector<PlannerHNS::W
 			}
 		}
 	}// woocheol
-
+*/
 	if((m_bFirstStartHMI && m_params.bEnableHMI) || !m_params.bEnableHMI)
 	{
 		pub_PathsRviz.publish(pathsToVisualize);
@@ -889,7 +879,6 @@ bool GlobalPlanner::UpdateGoalIndex()
 void GlobalPlanner::MainLoop()
 {
 	ros::Rate loop_rate(25);
-	ros::Rate change_rate(0.333); // woocheol
 	timespec animation_timer;
 	UtilityHNS::UtilityH::GetTickCount(animation_timer);
 
@@ -943,7 +932,6 @@ void GlobalPlanner::MainLoop()
 					m_bReplanSignal = false;
 					bMakeNewPlan = false;
 					VisualizeAndSend(m_GeneratedTotalPaths);
-					// change_rate.sleep(); // woocheol
 				}
 
 				else
