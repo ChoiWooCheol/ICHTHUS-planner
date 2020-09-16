@@ -470,7 +470,6 @@ void TrajectoryEvalCore::MainLoop()
 		ros::spinOnce();
 
 		setFollowDistance(); // woocheol
-		
 		if(bNewCurrentPos)
 		{
 			m_GlobalPathSections.clear();
@@ -555,10 +554,8 @@ void TrajectoryEvalCore::MainLoop()
 								planningParams, m_CarInfo, m_VehicleStatus, m_PredictedObjects, !m_bUseMoveingObjectsPrediction, m_CurrentBehavior.iTrajectory, m_bKeepCurrentIfPossible);
 
 
-//						if((m_GlobalPathSections.size() == 3 && ig == 2) || (m_GlobalPathSections.size() == 2 && ig == 1))
-//						{
-//							temp_tc.bBlocked = true;
-//						}
+						// woocheol
+						if(m_GlobalPathSections.size() > 2 && ig > 1) temp_tc.bBlocked = true;
 
 						if(m_GlobalPathSections.at(ig).size() > 0)
 						{
@@ -575,14 +572,13 @@ void TrajectoryEvalCore::MainLoop()
 								lane.closest_object_distance = m_TrajectoryCostsCalculator.trajectory_costs_.at(i).closest_obj_distance;
 								lane.closest_object_velocity = m_TrajectoryCostsCalculator.trajectory_costs_.at(i).closest_obj_velocity;
 								lane.cost = m_TrajectoryCostsCalculator.trajectory_costs_.at(i).cost;
+								// woocheol
+								if(m_GlobalPathSections.size() > 2 && ig > 1) m_TrajectoryCostsCalculator.trajectory_costs_.at(i).bBlocked = true;
 								lane.is_blocked = m_TrajectoryCostsCalculator.trajectory_costs_.at(i).bBlocked;
 								lane.lane_index = local_lanes.lanes.size();
 								lane.lane_id = ig;
 								local_lanes.lanes.push_back(lane);
 						}
-
-//						collected_local_roll_outs.push_back(m_TrajectoryCostsCalculator.local_roll_outs_);
-//						collected_trajectory_costs.push_back(m_TrajectoryCostsCalculator.trajectory_costs_);
 
 						PlannerHNS::ROSHelpers::TrajectoriesToColoredMarkers(m_TrajectoryCostsCalculator.local_roll_outs_, m_TrajectoryCostsCalculator.trajectory_costs_, temp_tc.index, all_rollOuts);
 						collision_points.insert(collision_points.end(), m_TrajectoryCostsCalculator.collision_points_.begin(), m_TrajectoryCostsCalculator.collision_points_.end());
@@ -600,6 +596,41 @@ void TrajectoryEvalCore::MainLoop()
 				if(FindBestLane(tcs, best_lane_costs))
 				{
 					autoware_msgs::Lane l;
+
+					/* // simple logic of lane change deceleration.
+					if(isSameLaneSession(prev_best_lane_cost, best_lane_costs))
+					{
+						l.closest_object_distance = best_lane_costs.closest_obj_distance;
+						l.closest_object_velocity = best_lane_costs.closest_obj_velocity;
+						l.cost					  = best_lane_costs.cost;
+						l.is_blocked			  = best_lane_costs.bBlocked;
+						l.lane_index			  = best_lane_costs.index;
+						l.lane_id				  = best_lane_costs.lane_index;
+						prev_best_lane_cost = best_lane_costs;
+					}
+					else
+					{
+						l.closest_object_distance = prev_best_lane_cost.closest_obj_distance;
+						l.closest_object_velocity = prev_best_lane_cost.closest_obj_velocity;
+						l.cost					  = prev_best_lane_cost.cost;
+						l.is_blocked 			  = prev_best_lane_cost.bBlocked;
+						l.lane_index			  = prev_best_lane_cost.index;
+						l.lane_id				  = prev_best_lane_cost.lane_index;
+						(desired_vel = current_vel * 0.65)
+						continue_cnt++;
+					}
+
+					if(continue_cnt > 10)
+					{
+						l.closest_object_distance = best_lane_costs.closest_obj_distance;
+						l.closest_object_velocity = best_lane_costs.closest_obj_velocity;
+						l.cost					  = best_lane_costs.cost;
+						l.is_blocked			  = best_lane_costs.bBlocked;
+						l.lane_index			  = best_lane_costs.index;
+						l.lane_id				  = best_lane_costs.lane_index;
+					}
+					*/
+					
 					l.closest_object_distance = best_lane_costs.closest_obj_distance;
 					l.closest_object_velocity = best_lane_costs.closest_obj_velocity;
 					l.cost = best_lane_costs.cost;
