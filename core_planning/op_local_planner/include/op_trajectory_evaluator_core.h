@@ -82,6 +82,11 @@ protected:
   	bool bNewBehaviorState;
   	double m_AdditionalFollowDistance;
 
+	/* woocheol */
+	uint continue_cnt = 0;
+	PlannerHNS::TrajectoryCost prev_best_lane_costs;
+	bool isSameLaneSession(PlannerHNS::TrajectoryCost& prev_lane_costs, PlannerHNS::TrajectoryCost& best_lane_costs);
+	/* modified */
 
   	visualization_msgs::MarkerArray m_CollisionsDummy;
 	visualization_msgs::MarkerArray m_CollisionsActual;

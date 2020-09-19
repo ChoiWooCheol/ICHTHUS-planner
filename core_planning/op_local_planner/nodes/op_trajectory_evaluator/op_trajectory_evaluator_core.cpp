@@ -447,7 +447,7 @@ bool TrajectoryEvalCore::FindBestLane(std::vector<PlannerHNS::TrajectoryCost> tc
 
 void TrajectoryEvalCore::setFollowDistance()
 {
-	double min_limit_distance		= 15.0;
+	double min_limit_distance		= 30.0;
 	double m_kph					= m_CurrentPos.v * 3.6;
 	double ichthus_latency_margin 	= 0.25 * m_CurrentPos.v*m_CurrentPos.v + 0.1 * m_CurrentPos.v; //(10m/s : 26m, 15m/s : 55m)
 	double m_brake_distance 		= 0.005 * m_kph*m_kph + 0.2 * m_kph; // origin car braking distance (10m/s => 13.68m)
@@ -458,6 +458,15 @@ void TrajectoryEvalCore::setFollowDistance()
 	m_PlanningParams.minFollowingDistance = m_newFollowDistance;
 	// nh.setParam("/op_common_params/minFollowingDistance", m_newFollowDistance);
 } // woocheol
+
+bool TrajectoryEvalCore::isSameLaneSession(PlannerHNS::TrajectoryCost& prev_lane_costs, PlannerHNS::TrajectoryCost& best_lane_costs)
+{
+	if(prev_lane_costs.index == -1) return true;
+	int m_rollouts = m_PlanningParams.rollOutNumber + 1;
+	int prev_lane_session = prev_lane_costs.index / m_rollouts; // if m_rollouts : 5 and lane idx : 0~4, lane session : 0
+	int best_lane_session = best_lane_costs.index / m_rollouts;
+	return (prev_lane_session == best_lane_session);
+}// woocheol
 
 void TrajectoryEvalCore::MainLoop()
 {
@@ -597,8 +606,8 @@ void TrajectoryEvalCore::MainLoop()
 				{
 					autoware_msgs::Lane l;
 
-					/* // simple logic of lane change deceleration.
-					if(isSameLaneSession(prev_best_lane_cost, best_lane_costs))
+					/* // simple logic of lane change deceleration./
+					if(isSameLaneSession(prev_best_lane_costs, best_lane_costs))
 					{
 						l.closest_object_distance = best_lane_costs.closest_obj_distance;
 						l.closest_object_velocity = best_lane_costs.closest_obj_velocity;
@@ -606,21 +615,21 @@ void TrajectoryEvalCore::MainLoop()
 						l.is_blocked			  = best_lane_costs.bBlocked;
 						l.lane_index			  = best_lane_costs.index;
 						l.lane_id				  = best_lane_costs.lane_index;
-						prev_best_lane_cost = best_lane_costs;
+						prev_best_lane_costs = best_lane_costs;
 					}
 					else
 					{
-						l.closest_object_distance = prev_best_lane_cost.closest_obj_distance;
-						l.closest_object_velocity = prev_best_lane_cost.closest_obj_velocity;
-						l.cost					  = prev_best_lane_cost.cost;
-						l.is_blocked 			  = prev_best_lane_cost.bBlocked;
-						l.lane_index			  = prev_best_lane_cost.index;
-						l.lane_id				  = prev_best_lane_cost.lane_index;
-						(desired_vel = current_vel * 0.65)
+						l.closest_object_distance = prev_best_lane_costs.closest_obj_distance;
+						l.closest_object_velocity = prev_best_lane_costs.closest_obj_velocity;
+						l.cost					  = prev_best_lane_costs.cost;
+						l.is_blocked 			  = prev_best_lane_costs.bBlocked;
+						l.lane_index			  = prev_best_lane_costs.index;
+						l.lane_id				  = prev_best_lane_costs.lane_index;
+						(input deceleration current velocity code.)
 						continue_cnt++;
 					}
 
-					if(continue_cnt > 10)
+					if(continue_cnt > 50) // Mainloop hz is 50hz. so continue_cnt 50 per 1 sec. 
 					{
 						l.closest_object_distance = best_lane_costs.closest_obj_distance;
 						l.closest_object_velocity = best_lane_costs.closest_obj_velocity;
@@ -628,7 +637,9 @@ void TrajectoryEvalCore::MainLoop()
 						l.is_blocked			  = best_lane_costs.bBlocked;
 						l.lane_index			  = best_lane_costs.index;
 						l.lane_id				  = best_lane_costs.lane_index;
+						continue_cnt = 0;
 					}
+					pub_TrajectoryCost.publish(l);
 					*/
 					
 					l.closest_object_distance = best_lane_costs.closest_obj_distance;
