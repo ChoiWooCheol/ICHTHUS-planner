@@ -507,11 +507,11 @@ void DecisionMaker::SetMaxVelocityParam(double max_speed)
 		{
 			double followDistance = beh.followDistance - 10.0;
 			double deceleration_critical = 0;
-			double distance_to_stop = followDistance -  critical_long_front_distance - m_params.additionalBrakingDistance;
+			double additionalBrakingDistance = 0.005 * 3.6*3.6*CurrStatus.speed*CurrStatus.speed + 0.2 * 3.6*CurrStatus.speed;
+			double distance_to_stop = followDistance -  critical_long_front_distance - additionalBrakingDistance;
 			double sudden_stop_distance = -pow((CurrStatus.speed - beh.followVelocity), 2)/m_CarInfo.max_deceleration;
-			ROS_ERROR("bd : %f", m_params.additionalBrakingDistance);
 			/* sum(weights) must be 1 */
-			double f_distanceRateVelocity = 0.5 * followDistance * 0.15; // weight1 * (distance / time)
+			double f_distanceRateVelocity = 0.5 * followDistance * 0.18; // weight1 * (distance / time)
 			double f_velocityRateVelocity = 0.3 * beh.followVelocity; 	 // weight2 * followVelocity
 			double c_velocityRateVelocity = 0.2 * CurrStatus.speed; 	 // weight3 * currentVelocity
 			double m_newDesiredVelocity = f_distanceRateVelocity + f_velocityRateVelocity + c_velocityRateVelocity;
@@ -525,18 +525,14 @@ void DecisionMaker::SetMaxVelocityParam(double max_speed)
 			{
 				deceleration_critical = m_CarInfo.max_deceleration;
 			}
-
-			desiredVelocity = std::min(deceleration_critical * dt + CurrStatus.speed, m_newDesiredVelocity);
+			desiredVelocity = m_newDesiredVelocity;
+			//desiredVelocity = std::min(deceleration_critical * dt + CurrStatus.speed, m_newDesiredVelocity);
 			//desiredVelocity = std::min(beh.followVelocity, m_newDesiredVelocity);
-
+			if(beh.followVelocity < 1.0 && desiredVelocity < 1.0) desiredVelocity = 0.0;
 			if(desiredVelocity < 0.0) desiredVelocity = 0.0;
 
 			if(beh.followVelocity > max_velocity) desiredVelocity = max_velocity;
-			// else if(beh.followVelocity > CurrStatus.speed)
-			// {
-			// 	ROS_ERROR("2");
-			// 	desiredVelocity = CurrStatus.speed;
-			// }
+			if(desiredVelocity > max_velocity) desiredVelocity = max_velocity;
 			else
 			{
 				if(distance_to_stop < critical_long_front_distance)
