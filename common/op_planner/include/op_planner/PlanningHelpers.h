@@ -23,8 +23,12 @@ namespace PlannerHNS {
 #define LANE_CHANGE_SPEED_FACTOR 0.5
 #define LANE_CHANGE_COST 3.0 // meters
 //#define BACKUP_STRAIGHT_PLAN_DISTANCE 10 //meters
-#define LANE_CHANGE_MIN_DISTANCE 5
+//#define LANE_CHANGE_MIN_DISTANCE 15
 // #define LANE_CHANGE_MIN_DISTANCE 20
+
+// woocheol
+static int LANE_CHANGE_MIN_DISTANCE = 8;
+static double skip_distance = 15;
 
 class PlanningHelpers
 {
@@ -33,6 +37,9 @@ public:
 	static std::vector<std::pair<GPSPoint, GPSPoint> > m_TestingClosestPoint;
 
 public:
+	// woocheol
+	void setChangeSmoothDistances(const double& current_vel);
+
 	PlanningHelpers();
 	virtual ~PlanningHelpers();
 

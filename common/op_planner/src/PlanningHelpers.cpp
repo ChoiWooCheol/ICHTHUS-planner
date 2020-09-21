@@ -9,7 +9,7 @@
 #include "op_planner/MatrixOperations.h"
 #include <string>
 #include <float.h>
-
+#include <cmath> // woocheol
 using namespace std;
 
 namespace PlannerHNS
@@ -2748,23 +2748,31 @@ WayPoint* PlanningHelpers::GetMinCostCell(const vector<WayPoint*>& cells, const 
 	return pC;
 }
 
+void PlanningHelpers::setChangeSmoothDistances(const double& current_vel)
+{
+	double default_skip_distance = 15;
+	double kph = 3.6 * current_vel;
+	double m_newSkipDistance = sqrt(10 * kph) + 0.3 * kph;
+	skip_distance = std::max(default_skip_distance, m_newSkipDistance);
+	LANE_CHANGE_MIN_DISTANCE = int(skip_distance / 2) + 1;
+} // woocheol
+
 void PlanningHelpers::ExtractPlanAlernatives(const std::vector<WayPoint>& singlePath, const double& plan_distance, std::vector<std::vector<WayPoint> >& allPaths)
 {
 	if(singlePath.size() == 0) return;
-
 	allPaths.clear();
 	std::vector<WayPoint> path;
 	path.push_back(singlePath.at(0));
 	// double skip_distance = 8;
-	double skip_distance = 30; // lanechange for target lane smooth value.
+	// double skip_distance = 30; // lanechange for target lane smooth value.
 	double d = 0;
 	bool bStartSkip = false;
 	for(unsigned int i= 1; i < singlePath.size(); i++)
 	{
 		if(singlePath.at(i).bDir != FORWARD_DIR && singlePath.at(i).pLane && singlePath.at(i).pFronts.size() > 0)
 		{
-
 			bStartSkip = true;
+			std::cout<<"left or right"<< i << std::endl;
 			WayPoint start_point = singlePath.at(i-1);
 
 			RelativeInfo start_info;
@@ -2793,7 +2801,7 @@ void PlanningHelpers::ExtractPlanAlernatives(const std::vector<WayPoint>& single
 
  					avg_cost_distance = avg_cost_distance/straight_path.size();
  					//std::cout << "Generated Parallel Path Cost: " << fabs(avg_cost_distance) << std::endl;
-
+	
 					straight_path.insert(straight_path.begin(), path.begin(), path.end());
 					for(unsigned int ic = 0; ic < straight_path.size(); ic++)
 					{
@@ -2804,11 +2812,15 @@ void PlanningHelpers::ExtractPlanAlernatives(const std::vector<WayPoint>& single
 			}
 		}
 
+		//std::cout << "allPaths size : " << allPaths.size() << endl;
 		if(bStartSkip)
 		{
+			//std::cout << "1lane idx : " << i << endl;
 			d += hypot(singlePath.at(i).pos.y - singlePath.at(i-1).pos.y, singlePath.at(i).pos.x - singlePath.at(i-1).pos.x);
+			std::cout<<d<<" "<<i<<std::endl;
 			if(d > skip_distance)
 			{
+				//std::cout << "2lane idx : " << i<< endl;
 				d = 0;
 				bStartSkip = false;
 			}
@@ -2816,6 +2828,7 @@ void PlanningHelpers::ExtractPlanAlernatives(const std::vector<WayPoint>& single
 
 		if(!bStartSkip)
 		{
+			//std::cout << "3lane idx : " << i<< endl;
 			path.push_back(singlePath.at(i));
 		}
 	}

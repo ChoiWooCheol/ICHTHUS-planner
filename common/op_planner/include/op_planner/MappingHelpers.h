@@ -56,7 +56,7 @@ public:
 	static WayPoint GetFirstWaypoint(RoadNetwork& map);
 	static WayPoint* GetLastWaypoint(RoadNetwork& map);
 	static void FindAdjacentLanes(RoadNetwork& map);
-	static void FindAdjacentLanesV2(RoadNetwork& map, const double& min_d = 1.2, const double& max_d = 3.5);
+	static void FindAdjacentLanesV2(RoadNetwork& map, const double& min_d = 1.2, const double& max_d = 5.5);
 
 	static void ConnectBoundariesToWayPoints(RoadNetwork& map);
 
