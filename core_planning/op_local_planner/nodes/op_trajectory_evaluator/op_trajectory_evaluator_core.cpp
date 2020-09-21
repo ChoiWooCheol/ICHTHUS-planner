@@ -243,6 +243,7 @@ void TrajectoryEvalCore::callbackGetGlobalPlannerPath(const autoware_msgs::LaneA
 	if(msg->lanes.size() > 0)
 	{
 		m_GlobalPaths.clear();
+		prev_lane_idx = -1; // woocheol
 		for(unsigned int i = 0 ; i < msg->lanes.size(); i++)
 		{
 			PlannerHNS::ROSHelpers::ConvertFromAutowareLaneToLocalLane(msg->lanes.at(i), m_temp_path);
@@ -454,7 +455,7 @@ void TrajectoryEvalCore::setFollowDistance()
 	double m_free_running_distance 	= m_CurrentPos.v; 
 	double m_newFollowDistance 		= m_brake_distance + m_free_running_distance + ichthus_latency_margin;
 	m_newFollowDistance = std::max(min_limit_distance, m_newFollowDistance);
-	ROS_INFO("m_newFollowDistance : %f", m_newFollowDistance);
+	// ROS_INFO("m_newFollowDistance : %f", m_newFollowDistance);
 	m_PlanningParams.minFollowingDistance = m_newFollowDistance;
 	// nh.setParam("/op_common_params/minFollowingDistance", m_newFollowDistance);
 } // woocheol
@@ -466,6 +467,23 @@ bool TrajectoryEvalCore::isSameLaneSession(PlannerHNS::TrajectoryCost& prev_lane
 	int prev_lane_session = prev_lane_costs.index / m_rollouts; // if m_rollouts : 5 and lane idx : 0~4, lane session : 0
 	int best_lane_session = best_lane_costs.index / m_rollouts;
 	return (prev_lane_session == best_lane_session);
+}// woocheol
+
+void TrajectoryEvalCore::isChanged(const int& prev_lane_idx, const int& curr_lane_idx)
+{
+	ROS_INFO("prev_lane_idx : %d", prev_lane_idx);
+	ROS_INFO("curr_lane_idx : %d", curr_lane_idx);
+	int m_rollouts = m_PlanningParams.rollOutNumber + 1;
+	int prev_lane_session = prev_lane_idx / m_rollouts;
+	int curr_lane_session = curr_lane_idx / m_rollouts;
+	is_changed = (prev_lane_session != curr_lane_session);
+
+	if(prev_lane_idx == -1){
+		is_changed = false;
+	}
+	ROS_INFO("prev_lane_session : %d", prev_lane_session);
+	ROS_INFO("curr_lane_session : %d", curr_lane_session);
+	ROS_INFO("is_changed : %d", is_changed);
 }// woocheol
 
 void TrajectoryEvalCore::MainLoop()
@@ -565,6 +583,9 @@ void TrajectoryEvalCore::MainLoop()
 
 						// woocheol
 						if(m_GlobalPathSections.size() > 2 && ig > 1) temp_tc.bBlocked = true;
+						// if(int(prev_lane_idx / m_PlanningParams.rollOutNumber + 1)==0 && ig == 0) temp_tc.bBlocked = true;
+			
+
 
 						if(m_GlobalPathSections.at(ig).size() > 0)
 						{
@@ -583,6 +604,7 @@ void TrajectoryEvalCore::MainLoop()
 								lane.cost = m_TrajectoryCostsCalculator.trajectory_costs_.at(i).cost;
 								// woocheol
 								if(m_GlobalPathSections.size() > 2 && ig > 1) m_TrajectoryCostsCalculator.trajectory_costs_.at(i).bBlocked = true;
+								// if(int(prev_lane_idx / m_PlanningParams.rollOutNumber + 1)==0 && ig == 0) m_TrajectoryCostsCalculator.trajectory_costs_.at(i).bBlocked = true;
 								lane.is_blocked = m_TrajectoryCostsCalculator.trajectory_costs_.at(i).bBlocked;
 								lane.lane_index = local_lanes.lanes.size();
 								lane.lane_id = ig;
@@ -648,6 +670,8 @@ void TrajectoryEvalCore::MainLoop()
 					l.is_blocked = best_lane_costs.bBlocked;
 					l.lane_index = best_lane_costs.index;
 					l.lane_id = best_lane_costs.lane_index;
+					// isChanged(prev_lane_idx, l.lane_index); // woocheol
+					// prev_lane_idx = l.lane_index; // woocheol
 					pub_TrajectoryCost.publish(l);
 				}
 				else
