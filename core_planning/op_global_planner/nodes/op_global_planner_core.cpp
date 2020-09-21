@@ -884,6 +884,8 @@ void GlobalPlanner::MainLoop()
 
 	while (ros::ok())
 	{
+		// PlannerHNS::PlanningHelpers::setChangeSmoothDistances(current_vel.twist.x);
+		
 		ros::spinOnce();
 		LoadMap();
 
