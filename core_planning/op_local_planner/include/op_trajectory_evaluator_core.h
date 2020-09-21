@@ -84,8 +84,11 @@ protected:
 
 	/* woocheol */
 	uint continue_cnt = 0;
+	int prev_lane_idx = -1;
+	bool is_changed;
 	PlannerHNS::TrajectoryCost prev_best_lane_costs;
 	bool isSameLaneSession(PlannerHNS::TrajectoryCost& prev_lane_costs, PlannerHNS::TrajectoryCost& best_lane_costs);
+	void isChanged(const int& prev_lane_idx, const int& curr_lane_idx);
 	/* modified */
 
   	visualization_msgs::MarkerArray m_CollisionsDummy;
