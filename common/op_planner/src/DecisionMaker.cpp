@@ -9,6 +9,7 @@
 #include "op_planner/MappingHelpers.h"
 #include "op_planner/MatrixOperations.h"
 #include <ros/ros.h>
+#include <cmath> // woocheol
 
 namespace PlannerHNS
 {
@@ -505,14 +506,15 @@ void DecisionMaker::SetMaxVelocityParam(double max_speed)
 
 		else if(beh.state == FOLLOW_STATE) // need change (woocheol)
 		{
-			double followDistance = beh.followDistance - 10.0;
+			double followDistance = beh.followDistance;
 			double deceleration_critical = 0;
 			double additionalBrakingDistance = 0.005 * 3.6*3.6*CurrStatus.speed*CurrStatus.speed + 0.2 * 3.6*CurrStatus.speed;
-			double distance_to_stop = followDistance -  critical_long_front_distance - additionalBrakingDistance;
+			double distance_to_stop = followDistance -  (3.0 *critical_long_front_distance);
 			double sudden_stop_distance = -pow((CurrStatus.speed - beh.followVelocity), 2)/m_CarInfo.max_deceleration;
 			/* sum(weights) must be 1 */
-			double f_distanceRateVelocity = 0.5 * followDistance * 0.18; // weight1 * (distance / time)
-			double f_velocityRateVelocity = 0.3 * beh.followVelocity; 	 // weight2 * followVelocity
+			double f_distanceRateVelocity = 0.8 * (sqrt(0.001 * pow(followDistance, 3)) - (0.001 * pow(followDistance, 2))); 
+			// double f_distanceRateVelocity = 0.5 * followDistance * 0.18; // weight1 * (distance / time)
+			double f_velocityRateVelocity = 0.0 * beh.followVelocity; 	 // weight2 * followVelocity
 			double c_velocityRateVelocity = 0.2 * CurrStatus.speed; 	 // weight3 * currentVelocity
 			double m_newDesiredVelocity = f_distanceRateVelocity + f_velocityRateVelocity + c_velocityRateVelocity;
 
@@ -606,7 +608,7 @@ void DecisionMaker::SetMaxVelocityParam(double max_speed)
 		m_Path.at(i).v = desiredVelocity;
 	}
 
-	if(!m_isEgoLane && desiredVelocity > 5.5)
+	if(!m_isEgoLane && desiredVelocity > 5.5) // NEED_LANE_CHANGE_STATE
 	{
 		desiredVelocity = 5.5;
 	} /// woocheol
