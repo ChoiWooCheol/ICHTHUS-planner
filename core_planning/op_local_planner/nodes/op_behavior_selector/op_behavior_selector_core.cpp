@@ -757,22 +757,43 @@ void BehaviorGen::LogLocalPlanningInfo(double dt)
 	}
 }
 
+void BehaviorGen::decisionEgoLaneDriving(int& ego_cnt, const std::vector<std::vector<PlannerHNS::WayPoint>> global_path, const PlannerHNS::TrajectoryCost best_lane)
+{
+	int m_ego_lane_id = global_path.size() - 1;
+	int m_curr_lane_id = best_lane.lane_index;
+	if(m_ego_lane_id == m_curr_lane_id)
+	{
+		ego_cnt++;
+		if(ego_cnt > 200)
+		{
+			ego_cnt = 0;
+			m_BehaviorGenerator.m_isEgoLane = true;
+			// std::cout << "behavior selector : current lane is ego lane!!" << std::endl;
+		}
+	}
+	else
+	{
+		// std::cout << "behavior selector : current lane is not ego lane!!" << std::endl;
+		m_BehaviorGenerator.m_isEgoLane = false;
+	}
+} // woocheol
+
 void BehaviorGen::MainLoop()
 {
 	ros::Rate loop_rate(50);
 
+	int ego_lane_driving_cnt = 0; // woocheol
 
 	timespec planningTimer;
 	UtilityHNS::UtilityH::GetTickCount(planningTimer);
 
 	while (ros::ok())
 	{
-
 		double dt  = UtilityHNS::UtilityH::GetTimeDiffNow(planningTimer);
 		UtilityHNS::UtilityH::GetTickCount(planningTimer);
 
 		ros::spinOnce();
-
+		decisionEgoLaneDriving(ego_lane_driving_cnt, m_GlobalPaths, m_TrajectoryBestCost); // woocheol
 		if(m_MapType == PlannerHNS::MAP_KML_FILE && !bMap)
 		{
 			bMap = true;

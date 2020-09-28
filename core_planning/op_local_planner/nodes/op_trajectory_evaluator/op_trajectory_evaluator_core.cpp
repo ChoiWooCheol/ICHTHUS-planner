@@ -491,7 +491,6 @@ void TrajectoryEvalCore::MainLoop()
 	ros::Rate loop_rate(50);
 
 	PlannerHNS::WayPoint prevState, state_change;
-
 	while (ros::ok())
 	{
 		ros::spinOnce();
@@ -664,14 +663,17 @@ void TrajectoryEvalCore::MainLoop()
 					pub_TrajectoryCost.publish(l);
 					*/
 					
+					/* lane sesstion : lane_id */
 					l.closest_object_distance = best_lane_costs.closest_obj_distance;
 					l.closest_object_velocity = best_lane_costs.closest_obj_velocity;
 					l.cost = best_lane_costs.cost;
 					l.is_blocked = best_lane_costs.bBlocked;
 					l.lane_index = best_lane_costs.index;
 					l.lane_id = best_lane_costs.lane_index;
+					
 					// isChanged(prev_lane_idx, l.lane_index); // woocheol
 					// prev_lane_idx = l.lane_index; // woocheol
+					
 					pub_TrajectoryCost.publish(l);
 				}
 				else
