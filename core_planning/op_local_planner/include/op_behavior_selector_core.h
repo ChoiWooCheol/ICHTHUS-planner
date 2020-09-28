@@ -145,6 +145,9 @@ protected: //Planning Related variables
 	ros::Subscriber sub_twist_raw;
 	ros::Subscriber sub_ctrl_cmd;
 
+	// woocheol
+	void decisionEgoLaneDriving(int& ego_cnt, const std::vector<std::vector<PlannerHNS::WayPoint>> global_path, const PlannerHNS::TrajectoryCost best_lane);
+
 	// Control Topics Sections
 	//----------------------------
 	void callbackGetTwistRaw(const geometry_msgs::TwistStampedConstPtr& msg);
