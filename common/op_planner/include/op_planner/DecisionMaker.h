@@ -53,7 +53,7 @@ public:
 	UtilityHNS::PIDController m_pidFollowing;
 
 	bool m_bRequestNewGlobalPlan;
-
+	bool m_isEgoLane = true; // woocheol
 public:
 
 	DecisionMaker();
