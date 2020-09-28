@@ -72,6 +72,7 @@ BehaviorGen::BehaviorGen()
 
 	//Traffic Information Section
 	//----------------------------
+	sub_alpacity_traffic_signal = nh.subscriber("/v2x_info", 1, &BehaviorGen::callbackAlpacityTrafficSignal, this); /// woocheol
 	sub_TrafficLightStatus = nh.subscribe("/light_color", 1, &BehaviorGen::callbackGetTrafficLightStatus, this);
 	sub_TrafficLightSignals	= nh.subscribe("/roi_signal", 1, &BehaviorGen::callbackGetTrafficLightSignals, this);
 	//----------------------------
@@ -521,6 +522,11 @@ void BehaviorGen::CollectRollOutsByGlobalPath()
 
 //Traffic Information Section
 //----------------------------
+void BehaviorGen::callbackAlpacityTrafficSignal(const daegu_v2x_decorder::v2x_info::ConstPtr& msg)
+{
+
+} // woocheol
+
 void BehaviorGen::callbackGetTrafficLightStatus(const autoware_msgs::TrafficLight& msg)
 {
 	std::cout << "Received Traffic Light Status : " << msg.traffic_light << std::endl;
