@@ -9,7 +9,6 @@
 #include "op_planner/MappingHelpers.h"
 #include "op_planner/MatrixOperations.h"
 #include <ros/ros.h>
-#include <cmath> // woocheol
 
 namespace PlannerHNS
 {
@@ -125,6 +124,7 @@ void DecisionMaker::InitBehaviorStates()
 
 	m_pTrafficLightWaitState = new TrafficLightWaitStateII(m_pStopState->m_pParams, m_pStopState->GetCalcParams(), m_pGoToGoalState);
 	m_pTrafficLightStopState = new TrafficLightStopStateII(m_pStopState->m_pParams, m_pStopState->GetCalcParams(), m_pGoToGoalState);
+
 	m_pStopState->InsertNextState(m_pGoToGoalState);
 	m_pStopState->InsertNextState(m_pGoalState);
 	m_pStopState->decisionMakingCount = 0;
@@ -511,8 +511,6 @@ void DecisionMaker::SetMaxVelocityParam(double max_speed)
 			double distance_to_stop = followDistance -  critical_long_front_distance - additionalBrakingDistance;
 			double sudden_stop_distance = -pow((CurrStatus.speed - beh.followVelocity), 2)/m_CarInfo.max_deceleration;
 			/* sum(weights) must be 1 */
-			// double f_distanceRateVelocity = sqrt(0.001 * pow(followDistance, 3)) - (0.001 * pow(followDistance, 2));
-			// double f_distanceRateVelocity = -1 * sqrt(0.000001 * pow(followDistance, 3)) + (0.005 * pow(followDistance, 2));
 			double f_distanceRateVelocity = 0.5 * followDistance * 0.18; // weight1 * (distance / time)
 			double f_velocityRateVelocity = 0.3 * beh.followVelocity; 	 // weight2 * followVelocity
 			double c_velocityRateVelocity = 0.2 * CurrStatus.speed; 	 // weight3 * currentVelocity
@@ -607,6 +605,11 @@ void DecisionMaker::SetMaxVelocityParam(double max_speed)
 	{
 		m_Path.at(i).v = desiredVelocity;
 	}
+
+	if(!m_isEgoLane && desiredVelocity > 5.5)
+	{
+		desiredVelocity = 5.5;
+	} /// woocheol
 
 	return desiredVelocity;
 
