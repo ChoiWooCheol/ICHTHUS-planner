@@ -146,7 +146,9 @@ protected: //Planning Related variables
 	ros::Subscriber sub_ctrl_cmd;
 
 	// woocheol
+	void callbackAlpacityTrafficSignal(const daegu_v2x_decorder::v2x_info::ConstPtr& msg);
 	void decisionEgoLaneDriving(int& ego_cnt, const std::vector<std::vector<PlannerHNS::WayPoint>> global_path, const PlannerHNS::TrajectoryCost best_lane);
+	ros:Subscriber sub_alpacity_traffic_signal;
 
 	// Control Topics Sections
 	//----------------------------
