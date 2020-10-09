@@ -2,12 +2,14 @@
 	<!-- Behavior selector specific parameters -->
 	
 	<arg name="evidence_trust_number" 	default="25"/>
-	<arg name="use_sim_time" 	default="false"/>	
+	<arg name="use_sim_time" 	default="false"/>
+	<arg name="show_driving_path" 	default="true"/>	
 			
 	<node pkg="op_local_planner" type="op_behavior_selector" name="op_behavior_selector" output="screen">
 	
 	<param name="evidence_trust_number" 	value="$(arg evidence_trust_number)"/>				
-	<param name="use_sim_time" 				value="$(arg use_sim_time)e" />
+	<param name="use_sim_time" 				value="$(arg use_sim_time)" />
+	<param name="show_driving_path" 		value="$(arg show_driving_path)" />
 			
 	</node>				
 			

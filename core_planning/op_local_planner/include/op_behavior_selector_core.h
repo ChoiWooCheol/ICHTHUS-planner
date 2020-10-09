@@ -37,6 +37,7 @@
 #include <geometry_msgs/PoseArray.h>
 #include <nav_msgs/Odometry.h>
 #include <autoware_msgs/LaneArray.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Bool.h>
@@ -54,6 +55,9 @@
 #include "op_planner/DecisionMaker.h"
 #include "op_utility/DataRW.h"
 
+#include<cmath> //woocheol
+#include<geometry_msgs/PoseArray.h> // woocheol
+
 #define LOG_LOCAL_PLANNING_DATA
 
 namespace BehaviorGeneratorNS
@@ -62,6 +66,17 @@ namespace BehaviorGeneratorNS
 class BehaviorGen
 {
 protected: //Planning Related variables
+	// woocheol
+	ros::Subscriber sub_LaneBranchArray; 						
+	double prev_nearest_dist = 999.0; 			
+	void callbackLaneBranchArray(const geometry_msgs::PoseArray& msg); 
+	void decisionLaneChangeDecelerate(); 
+	geometry_msgs::PoseArray m_branch_points;
+	// woocheol
+
+	//Control Related
+	int m_ControlFrequency;
+	std::vector<double> dt_list;
 
 	geometry_msgs::Pose m_OriginPos;
 	PlannerHNS::WayPoint m_CurrentPos;
@@ -73,11 +88,7 @@ protected: //Planning Related variables
 	std::vector<PlannerHNS::WayPoint> m_temp_path;
 	std::vector<std::vector<PlannerHNS::WayPoint> > m_GlobalPaths;
 	std::vector<std::vector<PlannerHNS::WayPoint> > m_GlobalPathsToUse;
-	bool bWayGlobalPath;
-	bool bWayGlobalPathLogs;
-	std::vector<std::vector<PlannerHNS::WayPoint> > m_RollOuts;
-	std::vector<std::vector<std::vector<PlannerHNS::WayPoint> > > m_LanesRollOuts;
-	bool bRollOuts;
+	std::vector<std::vector<std::vector<PlannerHNS::WayPoint> > > m_LanesRollOutsToUse;
 
 	PlannerHNS::MAP_SOURCE_TYPE m_MapType;
 	std::string m_MapPath;
@@ -91,11 +102,14 @@ protected: //Planning Related variables
 	PlannerHNS::DecisionMaker m_BehaviorGenerator;
 	PlannerHNS::BehaviorState m_CurrentBehavior;
 	bool m_bRequestNewPlanSent;
+	bool m_bShowActualDrivingPath;
 
   	std::vector<std::string> m_LogData;
+  	std::vector<std::pair<PlannerHNS::WayPoint, PlannerHNS::PolygonShape> > m_ActualDrivingPath;
 
   	PlannerHNS::PlanningParams m_PlanningParams;
   	PlannerHNS::CAR_BASIC_INFO m_CarInfo;
+  	PlannerHNS::ControllerParams m_ControlParams;
 
   	autoware_msgs::Lane m_CurrentTrajectoryToSend;
   	bool bNewLightStatus;
@@ -124,10 +138,10 @@ protected: //Planning Related variables
 	ros::Publisher pub_TargetSpeedRviz;
 	ros::Publisher pub_ActualSpeedRviz;
 	ros::Publisher pub_DetectedLight;
-	ros::Publisher pub_CurrTrajectoryIndex;
-	ros::Publisher pub_CurrLaneIndex;
+	ros::Publisher pub_CurrGlobalLocalPathsIds;
 	ros::Publisher pub_RequestReplan;
 	ros::Publisher pub_BehaviorStateRviz;
+	ros::Publisher pub_CurrDrivingPathRviz;
 
 	// define subscribers.
 	ros::Subscriber sub_current_pose;
@@ -144,11 +158,6 @@ protected: //Planning Related variables
 	ros::Subscriber sub_twist_cmd;
 	ros::Subscriber sub_twist_raw;
 	ros::Subscriber sub_ctrl_cmd;
-
-	// woocheol
-	void callbackAlpacityTrafficSignal(const daegu_v2x_decorder::v2x_info::ConstPtr& msg);
-	void decisionEgoLaneDriving(int& ego_cnt, const std::vector<std::vector<PlannerHNS::WayPoint>> global_path, const PlannerHNS::TrajectoryCost best_lane);
-	ros:Subscriber sub_alpacity_traffic_signal;
 
 	// Control Topics Sections
 	//----------------------------
@@ -167,7 +176,8 @@ protected: //Planning Related variables
 	void callbackGetGlobalPlannerPath(const autoware_msgs::LaneArrayConstPtr& msg);
 	void callbackGetLocalPlannerPath(const autoware_msgs::LaneArrayConstPtr& msg);
 	void callbackGetLocalTrajectoryCost(const autoware_msgs::LaneConstPtr& msg);
-	void CollectRollOutsByGlobalPath();
+	void CollectRollOutsByGlobalPath(std::vector< std::vector<PlannerHNS::WayPoint> >& local_rollouts);
+	bool CompareTrajectoriesWithIds(std::vector<std::vector<PlannerHNS::WayPoint> >& paths, std::vector<int>& local_ids);
 	//----------------------------
 
 	//Traffic Information Section
@@ -181,6 +191,8 @@ protected: //Planning Related variables
   void SendLocalPlanningTopics();
   void VisualizeLocalPlanner();
   void LogLocalPlanningInfo(double dt);
+  void InsertNewActualPathPair(const double& min_record_distance = 2.0);
+  void isLaneChangeComplete();
 
 public:
   BehaviorGen();

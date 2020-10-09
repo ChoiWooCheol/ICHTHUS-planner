@@ -30,6 +30,7 @@
 #include <autoware_msgs/VehicleStatus.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <std_msgs/Int32.h>
+#include <std_msgs/Int32MultiArray.h>
 
 #include "op_planner/PlannerCommonDef.h"
 #include "op_planner/TrajectoryEvaluator.h"
@@ -37,117 +38,100 @@
 namespace TrajectoryEvaluatorNS
 {
 
-class TrajectoryEvalCore
-{
-protected:
+	class TrajectoryEvalCore
+	{
+	protected:
+		bool m_isEgoLane = false; // woocheol
 
-    PlannerHNS::TrajectoryEvaluator m_TrajectoryCostsCalculator;
-	bool m_bUseMoveingObjectsPrediction;
+		PlannerHNS::TrajectoryEvaluator m_TrajectoryCostsCalculator;
+		bool m_bUseMoveingObjectsPrediction;
 
-	geometry_msgs::Pose m_OriginPos;
+		geometry_msgs::Pose m_OriginPos;
 
-	PlannerHNS::WayPoint m_CurrentPos;
-	bool bNewCurrentPos;
+		PlannerHNS::WayPoint m_CurrentPos;
+		bool bNewCurrentPos;
 
-	PlannerHNS::VehicleState m_VehicleStatus;
-	bool bVehicleStatus;
-	bool m_bKeepCurrentIfPossible;
+		PlannerHNS::VehicleState m_VehicleStatus;
+		bool bVehicleStatus;
+		bool m_bKeepCurrentIfPossible;
 
-	std::vector<PlannerHNS::WayPoint> m_temp_path;
-	std::vector<std::vector<PlannerHNS::WayPoint> > m_GlobalPaths;
-	std::vector<std::vector<PlannerHNS::WayPoint> > m_GlobalPathsToUse;
-	std::vector<std::vector<PlannerHNS::WayPoint> > m_GlobalPathSections;
-	std::vector<int> m_prev_index;
-	std::vector<PlannerHNS::WayPoint> t_centerTrajectorySmoothed;
-	bool bWayGlobalPath;
-	bool bWayGlobalPathToUse;
-	bool bEnableSmoothGlobalPathForCARLA;
-	std::vector<std::vector<PlannerHNS::WayPoint> > m_GeneratedRollOuts;
-	std::vector<std::vector<std::vector<PlannerHNS::WayPoint> > > m_LanesRollOuts;
-	bool bRollOuts;
+		std::vector<PlannerHNS::WayPoint> m_temp_path;
+		std::vector<int> m_CurrGlobalPathsIds;
+		std::vector<std::vector<PlannerHNS::WayPoint>> m_GlobalPaths;
+		std::vector<std::vector<PlannerHNS::WayPoint>> m_GlobalPathsToUse;
+		std::vector<std::vector<PlannerHNS::WayPoint>> m_GlobalPathSections;
+		std::vector<int> m_prev_index;
+		std::vector<PlannerHNS::WayPoint> t_centerTrajectorySmoothed;
+		bool bEnableSmoothGlobalPathForCARLA;
+		std::vector<std::vector<std::vector<PlannerHNS::WayPoint>>> m_LanesRollOutsToUse;
 
-	std::vector<PlannerHNS::DetectedObject> m_PredictedObjects;
-	bool bPredictedObjects;
+		std::vector<PlannerHNS::DetectedObject> m_PredictedObjects;
+		bool bPredictedObjects;
 
+		struct timespec m_PlanningTimer;
+		std::vector<std::string> m_LogData;
 
-	struct timespec m_PlanningTimer;
-  	std::vector<std::string>    m_LogData;
+		PlannerHNS::EvaluationParams m_EvaluationParams;
+		PlannerHNS::PlanningParams m_PlanningParams;
+		PlannerHNS::PlanningParams m_ModPlanningParams;
+		PlannerHNS::CAR_BASIC_INFO m_CarInfo;
 
-  	PlannerHNS::EvaluationParams m_EvaluationParams;
-  	PlannerHNS::PlanningParams m_PlanningParams;
-  	PlannerHNS::PlanningParams m_ModPlanningParams;
-  	PlannerHNS::CAR_BASIC_INFO m_CarInfo;
+		PlannerHNS::BehaviorState m_CurrentBehavior;
+		double m_AdditionalFollowDistance;
 
-  	PlannerHNS::BehaviorState m_CurrentBehavior;
-  	bool bNewBehaviorState;
-  	double m_AdditionalFollowDistance;
+		visualization_msgs::MarkerArray m_CollisionsDummy;
+		visualization_msgs::MarkerArray m_CollisionsActual;
 
-	/* woocheol */
-	uint continue_cnt = 0;
-	int prev_lane_idx = -1;
-	bool is_changed;
-	PlannerHNS::TrajectoryCost prev_best_lane_costs;
-	bool isSameLaneSession(PlannerHNS::TrajectoryCost& prev_lane_costs, PlannerHNS::TrajectoryCost& best_lane_costs);
-	void isChanged(const int& prev_lane_idx, const int& curr_lane_idx);
-	/* modified */
+		std::string m_ExperimentFolderName;
+		std::string m_EstimatedObjectsTopicName;
 
-  	visualization_msgs::MarkerArray m_CollisionsDummy;
-	visualization_msgs::MarkerArray m_CollisionsActual;
+		//ROS messages (topics)
+		ros::NodeHandle nh;
 
-	std::string m_ExperimentFolderName;
-	std::string m_EstimatedObjectsTopicName;
+		//define publishers
+		ros::Publisher pub_CollisionPointsRviz;
+		ros::Publisher pub_LocalWeightedTrajectoriesRviz;
+		ros::Publisher pub_LocalWeightedTrajectories;
+		ros::Publisher pub_TrajectoryCost;
+		ros::Publisher pub_SafetyBorderRviz;
 
-	//ROS messages (topics)
-	ros::NodeHandle nh;
+		// define subscribers.
+		ros::Subscriber sub_current_pose;
+		ros::Subscriber sub_current_velocity;
+		ros::Subscriber sub_robot_odom;
+		ros::Subscriber sub_can_info;
+		ros::Subscriber sub_vehicle_status;
+		ros::Subscriber sub_GlobalPlannerPaths;
+		ros::Subscriber sub_LocalPlannerPaths;
+		ros::Subscriber sub_predicted_objects;
+		ros::Subscriber sub_CurrGlobalLocalPathsIds;
 
-	//define publishers
-	ros::Publisher pub_CollisionPointsRviz;
-	ros::Publisher pub_LocalWeightedTrajectoriesRviz;
-	ros::Publisher pub_LocalWeightedTrajectories;
-	ros::Publisher pub_TrajectoryCost;
-	ros::Publisher pub_SafetyBorderRviz;
+		// Callback function for subscriber.
+		void callbackGetCurrentPose(const geometry_msgs::PoseStampedConstPtr &msg);
+		void callbackGetAutowareStatus(const geometry_msgs::TwistStampedConstPtr &msg);
+		void callbackGetCANInfo(const autoware_can_msgs::CANInfoConstPtr &msg);
+		void callbackGetRobotOdom(const nav_msgs::OdometryConstPtr &msg);
+		void callbackGetVehicleStatus(const autoware_msgs::VehicleStatusConstPtr &msg);
+		void callbackGetGlobalPlannerPath(const autoware_msgs::LaneArrayConstPtr &msg);
+		void callbackGetLocalPlannerPath(const autoware_msgs::LaneArrayConstPtr &msg);
+		void callbackGetPredictedObjects(const autoware_msgs::DetectedObjectArrayConstPtr &msg);
+		void callbackGetTrajectoryInforFromBehaviorSelector(const std_msgs::Int32MultiArrayConstPtr &msg);
 
-	// define subscribers.
-	ros::Subscriber sub_current_pose;
-	ros::Subscriber sub_current_velocity;
-	ros::Subscriber sub_robot_odom;
-	ros::Subscriber sub_can_info;
-	ros::Subscriber sub_vehicle_status;
-	ros::Subscriber sub_GlobalPlannerPaths;
-	ros::Subscriber sub_LocalPlannerPaths;
-	ros::Subscriber sub_predicted_objects;
-	ros::Subscriber sub_current_trajectory_index;
-	ros::Subscriber sub_current_lane_index;
-	ros::Subscriber sub_behavior_state;
+		//Helper Functions
+		void UpdatePlanningParams(ros::NodeHandle &_nh);
+		//int GetGlobalPathIndex(const int& iCurrTrajectory);
+		void CollectRollOutsByGlobalPath(std::vector<std::vector<PlannerHNS::WayPoint>> &local_rollouts);
+		void BalanceFactorsToOne(double &priority, double &transition, double &longi, double &lateral, double &change);
+		bool FindBestLane(std::vector<PlannerHNS::TrajectoryCost> tcs, PlannerHNS::TrajectoryCost &best_l);
+		bool CompareTrajectoriesWithIds(std::vector<std::vector<PlannerHNS::WayPoint>> &paths, std::vector<int> &local_ids);
+		void setFollowDistance();
 
-	void setFollowDistance(); //woocheol
+	public:
+		TrajectoryEvalCore();
+		~TrajectoryEvalCore();
+		void MainLoop();
+	};
 
-	// Callback function for subscriber.
-	void callbackGetCurrentPose(const geometry_msgs::PoseStampedConstPtr& msg);
-	void callbackGetAutowareStatus(const geometry_msgs::TwistStampedConstPtr& msg);
-	void callbackGetCANInfo(const autoware_can_msgs::CANInfoConstPtr &msg);
-	void callbackGetRobotOdom(const nav_msgs::OdometryConstPtr& msg);
-	void callbackGetVehicleStatus(const autoware_msgs::VehicleStatusConstPtr & msg);
-	void callbackGetGlobalPlannerPath(const autoware_msgs::LaneArrayConstPtr& msg);
-	void callbackGetLocalPlannerPath(const autoware_msgs::LaneArrayConstPtr& msg);
-	void callbackGetPredictedObjects(const autoware_msgs::DetectedObjectArrayConstPtr& msg);
-//	void callbackGetTrajectoryIndex(const std_msgs::Int32ConstPtr& msg);
-//	void callbackGetLaneIndex(const std_msgs::Int32ConstPtr& msg);
-	void callbackGetBehaviorState(const autoware_msgs::WaypointConstPtr& msg);
+} // namespace TrajectoryEvaluatorNS
 
-	//Helper Functions
-  void UpdatePlanningParams(ros::NodeHandle& _nh);
-  //int GetGlobalPathIndex(const int& iCurrTrajectory);
-  void CollectRollOutsByGlobalPath();
-  void BalanceFactorsToOne(double& priority, double& transition, double& longi, double& lateral, double& change);
-  bool FindBestLane(std::vector<PlannerHNS::TrajectoryCost> tcs, PlannerHNS::TrajectoryCost& best_l);
-
-public:
-  TrajectoryEvalCore();
-  ~TrajectoryEvalCore();
-  void MainLoop();
-};
-
-}
-
-#endif  // OP_TRAJECTORY_EVALUATOR_CORE
+#endif // OP_TRAJECTORY_EVALUATOR_CORE

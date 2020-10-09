@@ -53,14 +53,14 @@
 #include "op_planner/PlannerH.h"
 #include "op_utility/DataRW.h"
 
-#include <math.h>
-#include <autoware_msgs/LaneArray.h>
+#include <geometry_msgs/PoseArray.h> // woocheol
+#include <geometry_msgs/Pose.h> // woocheol
 
 namespace GlobalPlanningNS
 {
 
 #define MAX_GLOBAL_PLAN_SEARCH_DISTANCE 100000 //meters
-#define MIN_EXTRA_PLAN_DISTANCE 100 //meters
+#define MIN_EXTRA_PLAN_DISTANCE 120 //meters
 //#define REPLANNING_DISTANCE 2.5
 //#define REPLANNING_TIME 5
 
@@ -80,7 +80,6 @@ public:
 	int waitingTime; // waiting time at each destination in seconds.
 	double endOfPathDistance; // when the vehicle is close to the end of global path with this distance , the waiting state will triggered
 	double slowDownSpeed; // when HMI send slow down command, this speed will be assigned to the new trajectory, in km/hour
-	std::string topicName; // woocheol
 
 	GlobalPlanningParams()
 	{
@@ -105,6 +104,10 @@ public:
 	int m_iCurrentGoalIndex;
 	int m_HMIDestinationID;
 protected:
+	std::vector<PlannerHNS::WayPoint> m_branch_points; // woocheol
+	ros::Publisher pub_BranchPose; // woocheol
+	ros::Publisher pub_BranchPoseRviz; // woocheol
+	void publishBranchPointArray(); // woocheol
 
 	GlobalPlanningParams m_params;
 	PlannerHNS::WayPoint m_CurrentPose;
@@ -124,7 +127,6 @@ protected:
 	timespec m_WaitingTimer;
 	timespec m_ReplanningTimer;
 	bool m_bReplanSignal;
-	
 
 	PlannerHNS::WayPoint m_PreviousPlanningPose;
 
@@ -154,7 +156,6 @@ public:
   void MainLoop();
 
 private:
-  PlannerHNS::WayPoint* m_pCurrGoal;
   std::vector<UtilityHNS::DestinationsDataFileReader::DestinationData> m_destinations;
 
   // Callback function for subscriber.
@@ -193,9 +194,7 @@ private:
   	bool UpdateGoalIndex();
   	bool UpdateGoalWithHMI();
 
-	bool checkOverlapLanes(const autoware_msgs::LaneArray& lane_array); // woocheol
-	bool checkDistance(const PlannerHNS::WayPoint& m_CurrPose, const double x, const double y); // woocheol
-	
+
   	//Mapping Section
   	UtilityHNS::MapRaw m_MapRaw;
   	ros::Subscriber sub_bin_map;
@@ -233,6 +232,22 @@ private:
 	void kmlMapFileNameCallback(const std_msgs::String& file_name);
 	void LoadKmlMap();
 	void LoadMap();
+
+	/**
+	 * Animate Global path generation
+	 */
+	PlannerHNS::WayPoint* m_pCurrGoal;
+  	ros::Publisher pub_GlobalPlanAnimationRviz;
+  	std::vector<PlannerHNS::WayPoint*> m_PlanningVisualizeTree;
+  	std::vector<PlannerHNS::WayPoint*> m_CurrentLevel;
+  	visualization_msgs::MarkerArray m_AccumPlanLevels;
+  	unsigned int m_iCurrLevel;
+  	unsigned int m_nLevelSize;
+  	double m_CurrMaxCost;
+  	int m_bSwitch;
+  	bool m_bEnableAnimation;
+  	void AnimatedVisualizationForGlobalPath(double time_interval = 0.5);
+  	timespec m_animation_timer;
 
 };
 

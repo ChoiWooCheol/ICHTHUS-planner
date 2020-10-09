@@ -72,7 +72,6 @@ protected:
 
   	//ROS messages (topics)
 	ros::NodeHandle nh;
-	ros::NodeHandle nh_; // woocheol
 
 	//define publishers
 	ros::Publisher pub_PathsRviz;

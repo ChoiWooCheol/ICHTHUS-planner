@@ -5,42 +5,50 @@
 	<arg name="mapFileName" 				default="" />
 	<arg name="lanelet2_origin"				default="0,0,0," /> <!-- GPS origin for lanelet2 map files, Lat, Long, Alt  -->
 		
-	<arg name="pathDensity" 				default="0.5" /> <!-- check ok --> 
-	<arg name="rollOutDensity" 				default="0.5" /> <!-- check ok -->
-	<arg name="rollOutsNumber" 				default="6"    /> <!-- check ok -->
+	<arg name="pathDensity" 				default="0.5" />
+	<arg name="rollOutDensity" 				default="0.5" />
+	<arg name="rollOutsNumber" 				default="6"    />
 		
-	<arg name="maxLocalPlanDistance" 		default="50" />	<!-- check ok -->
-	<arg name="horizonDistance" 			default="200"  /> <!-- check ok -->
+	<arg name="maxLocalPlanDistance" 		default="50" />	
+	<arg name="horizonDistance" 			default="200"  />
 	
-	<arg name="minFollowingDistance" 		default="35.0"  /> <!-- check ok --> <!-- should be bigger than Distance to follow --> 
-	<arg name="minDistanceToAvoid" 			default="20.0" /> <!-- check ok --> <!-- should be smaller than minFollowingDistance and larger than maxDistanceToAvoid -->
-	<arg name="maxDistanceToAvoid" 			default="5.0"  /> <!-- check ok --> <!-- should be smaller than minDistanceToAvoid -->
-	<arg name="speedProfileFactor"			default="0.8"  /> 
+	<arg name="minFollowingDistance" 		default="35.0"  /> <!-- should be bigger than Distance to follow -->	
+	<arg name="minDistanceToAvoid" 			default="20.0" /> <!-- should be smaller than minFollowingDistance and larger than maxDistanceToAvoid -->
+	<arg name="maxDistanceToAvoid" 			default="5.0"  /> <!-- should be smaller than minDistanceToAvoid -->
+	<arg name="speedProfileFactor"			default="0.8"  />
 	
-	<arg name="smoothingDataWeight"			default="0.4"  /> <!-- used in op_trajectory_generator -->
-	<arg name="smoothingSmoothWeight"		default="0.45"  />	<!-- used in op_trajectory_generator -->
+	<arg name="smoothingDataWeight"			default="0.45"  />
+	<arg name="smoothingSmoothWeight"		default="0.4"  />	
 	
 	<arg name="horizontalSafetyDistance"	default="1.2"  />
 	<arg name="verticalSafetyDistance"		default="0.8"  />
 	
-	<arg name="enableSwerving" 				default="true"  /> <!-- check ok : enable avoidance --> 
+	<arg name="enableSwerving" 				default="true"  />
 	<arg name="enableFollowing" 			default="true" />	
 	<arg name="enableTrafficLightBehavior" 	default="false" />
 	<arg name="enableStopSignBehavior" 		default="false" />	
-	<arg name="enableLaneChange" 			default="true" />	
+	<arg name="enableLaneChange" 			default="false" />	
 	
-	<!-- Vehicle Info, shared with controller and simulation --> <!-- check ok -->
-	<arg name="width" 						default="1.85"  />
-	<arg name="length" 						default="4.2"  />
+	<!-- Vehicle Info, shared with controller and simulation -->
+	<arg name="height" 						default="1.47"  />
+	<arg name="front_length"				default="1.0"  />
+	<arg name="back_length"					default="0.6"  />
+	<arg name="width" 						default="1.82"  />
+	<arg name="length" 						default="4.54"  />	
 	<arg name="wheelBaseLength" 			default="2.7"  />
 	<arg name="turningRadius"				default="5.2"  />
-	<arg name="maxWheelAngle" 				default="0.45" /> <!-- radians -->
+	<arg name="maxWheelAngle" 				default="0.42" /> <!-- radians -->
 	<arg name="steeringDelay" 				default="1.2" /> <!-- time steering wheel take to turn from zero to max left or right -->
 	<arg name="minPursuiteDistance" 		default="3.0" /> <!-- min distance to forward following target point on the trajectory  -->
-	<arg name="maxAcceleration" 			default="3.0" /> <!-- m/s*s -->
-	<arg name="maxDeceleration" 			default="-3.0" /> <!-- m/s*s -->
-	<arg name="maxVelocity" 				default="6.0" /> <!-- m/s -->
+	<arg name="maxAcceleration" 			default="2.0" /> <!-- m/s*s -->
+	<arg name="maxDeceleration" 			default="-2.0" /> <!-- m/s*s -->
+	<arg name="maxVelocity" 				default="10.0" /> <!-- m/s -->
 	<arg name="minVelocity" 				default="0.1" /> <!-- m/s -->
+	<!-- Internal ACC parameters -->
+	<arg name="use_internal_acc" 			default="true" />
+	<arg name="accelerationPushRatio" 		default="1.5" />
+	<arg name="brakingPushRatio" 			default="3.4" />
+	<arg name="curveSlowDownRatio" 			default="0.5" />	
 	<!-- ................................................... -->
 	
 	<arg name="additionalBrakingDistance" 	default="1.0"  />
@@ -54,9 +62,9 @@
 	<arg name="vel_can_topic"				default="/can_info" />
 	<arg name="vehicle_status_topic"		default="/vehicle_status" />
 			
-	<arg name="experimentName" 				default="" />		
+	<arg name="experimentName" 				default="decision_maker" />		
 	
-	<arg name="objects_input_topic" 		default="/detection/contour_tracker/objects" /> <!-- check ok -->
+	<arg name="objects_input_topic" 		default="/detection/contour_tracker/objects" />
 
 	<node pkg="op_local_planner" type="op_common_params" name="op_common_params" output="screen">	
 		<param name="mapSource" 				value="$(arg mapSource)" /> <!-- Autoware=0, Vector Map Folder=1, kml=2 -->
@@ -82,9 +90,12 @@
 		<param name="enableTrafficLightBehavior" value="$(arg enableTrafficLightBehavior)" />
 		<param name="enableStopSignBehavior" 	value="$(arg enableStopSignBehavior)" />	
 		<param name="enableLaneChange" 			value="$(arg enableLaneChange)" />
-				
+		
+		<param name="height" 					value="$(arg height)"  />		
+		<param name="front_length" 				value="$(arg front_length)"  />
+		<param name="back_length" 				value="$(arg back_length)"  />
 		<param name="width" 					value="$(arg width)"  />
-		<param name="length" 					value="$(arg length)"  />
+		<param name="length" 					value="$(arg length)"  />		
 		<param name="wheelBaseLength" 			value="$(arg wheelBaseLength)"  />
 		<param name="turningRadius"				value="$(arg turningRadius)"  />
 		<param name="maxWheelAngle" 			value="$(arg maxWheelAngle)" />
@@ -94,6 +105,10 @@
 		<param name="maxDeceleration" 			value="$(arg maxDeceleration)" />
 		<param name="maxVelocity" 				value="$(arg maxVelocity)" />
 		<param name="minVelocity" 				value="$(arg minVelocity)" />
+		<param name="use_internal_acc" 			value="$(arg use_internal_acc)" />
+		<param name="accelerationPushRatio" 	value="$(arg accelerationPushRatio)" />
+		<param name="brakingPushRatio" 			value="$(arg brakingPushRatio)" />
+		<param name="curveSlowDownRatio" 		value="$(arg curveSlowDownRatio)" />
 			
 		<param name="additionalBrakingDistance" value="$(arg additionalBrakingDistance)"  />
 		<param name="goalDiscoveryDistance" 	value="$(arg goalDiscoveryDistance)"  />

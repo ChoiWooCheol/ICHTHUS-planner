@@ -31,8 +31,8 @@ TrajectoryGen::TrajectoryGen()
 	bEnableVisualizeGlobalPathForCARLA = false;
 	bFrontAxelStart = false;
 
-	// ros::NodeHandle _nh; // woocheol
-	UpdatePlanningParams(nh_); // woocheol _nh -> nh_
+	ros::NodeHandle _nh;
+	UpdatePlanningParams(_nh);
 
 	tf::StampedTransform transform;
 	tf::TransformListener tf_listener;
@@ -49,7 +49,7 @@ TrajectoryGen::TrajectoryGen()
 	sub_current_pose = nh.subscribe("/current_pose", 1, &TrajectoryGen::callbackGetCurrentPose, this);
 
 	int bVelSource = 1;
-	nh_.getParam("/op_common_params/velocitySource", bVelSource); // woocheol _nh -> nh_
+	_nh.getParam("/op_common_params/velocitySource", bVelSource);
 	std::string velocity_topic;
 	if(bVelSource == 0)
 	{
@@ -66,7 +66,7 @@ TrajectoryGen::TrajectoryGen()
 	else if(bVelSource == 3)
 	{
 		nh.getParam("/op_common_params/vehicle_status_topic", velocity_topic);
-		sub_vehicle_status = nh.subscribe(velocity_topic, 1, &TrajectoryGen::callbackGetVehicleStatus, this);
+		sub_vehicle_status = _nh.subscribe(velocity_topic, 1, &TrajectoryGen::callbackGetVehicleStatus, this);
 	}
 
 	sub_GlobalPlannerPaths = nh.subscribe("/lane_waypoints_array", 1, &TrajectoryGen::callbackGetGlobalPlannerPath, this);
@@ -126,6 +126,9 @@ void TrajectoryGen::UpdatePlanningParams(ros::NodeHandle& _nh)
 
 	_nh.getParam("/op_common_params/enableLaneChange", m_PlanningParams.enableLaneChange);
 
+	_nh.getParam("/op_common_params/front_length", m_CarInfo.front_length);
+	_nh.getParam("/op_common_params/back_length", m_CarInfo.back_length);
+	_nh.getParam("/op_common_params/height", m_CarInfo.height);
 	_nh.getParam("/op_common_params/width", m_CarInfo.width);
 	_nh.getParam("/op_common_params/length", m_CarInfo.length);
 	_nh.getParam("/op_common_params/wheelBaseLength", m_CarInfo.wheel_base);
@@ -325,7 +328,6 @@ void TrajectoryGen::MainLoop()
 
 	while (ros::ok())
 	{
-		nh_.getParam("/op_trajectory_generator/samplingOutMargin", m_PlanningParams.rollInMargin); // woocheol
 		ros::spinOnce();
 
 		if(bInitPos && m_GlobalPaths.size()>0)

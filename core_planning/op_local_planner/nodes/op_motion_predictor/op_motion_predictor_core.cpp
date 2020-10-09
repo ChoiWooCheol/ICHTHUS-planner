@@ -147,6 +147,9 @@ void MotionPrediction::UpdatePlanningParams(ros::NodeHandle& _nh)
 
 	_nh.getParam("/op_common_params/enableLaneChange", m_PlanningParams.enableLaneChange);
 
+	_nh.getParam("/op_common_params/front_length", m_CarInfo.front_length);
+	_nh.getParam("/op_common_params/back_length", m_CarInfo.back_length);
+	_nh.getParam("/op_common_params/height", m_CarInfo.height);
 	_nh.getParam("/op_common_params/width", m_CarInfo.width);
 	_nh.getParam("/op_common_params/length", m_CarInfo.length);
 	_nh.getParam("/op_common_params/wheelBaseLength", m_CarInfo.wheel_base);

@@ -1,12 +1,12 @@
 <!-- -->
 <launch>
 	<arg name="pathDensity" 					default="0.75" /> <!-- distance between each two waypoints-->
-	<arg name="enableSmoothing" 				default="True" /> 
-	<arg name="enableLaneChange" 				default="True" /> 
-	<arg name="enableRvizInput" 				default="True" /> 
-	<arg name="enableHMI" 						default="False" /> 
+	<arg name="enableSmoothing" 				default="true" /> 
+	<arg name="enableLaneChange" 				default="false" /> 
+	<arg name="enableRvizInput" 				default="false" /> 
+	<arg name="enableHMI" 						default="false" /> 
 	<arg name="experimentName" 					default="" />
-	<arg name="enableReplan"    				default="true" />
+	<arg name="enableReplan"    				default="false" />
 	<arg name="goalConfirmDistance" 			default="10.0" />	
 	<arg name="velocitySource"					default="1" /> <!-- read velocities from (0- Odometry, 1- autoware current_velocities, 2- car_info, 3- vehicle status ) "" -->
 	<arg name="vel_odom_topic"					default="/carla/ego_vehicle/odometry" />
@@ -17,9 +17,7 @@
 	<arg name="mapFileName" 					default="" /> <!-- incase of kml map source -->
 	<arg name="lanelet2_origin"					default="0,0,0" /> <!-- GPS origin for lanelet2 map files, Lat, Long, Alt  --> 	
 	<arg name="destinationFileName" 			default="" />	
-	<arg name="topicName"			 			default="/lane_waypoints_array" />
-	<!--<arg name="topicName"			 			default="/global_lane_waypoints_array" />-->
-
+	
 <node pkg="op_global_planner" type="op_global_planner" name="op_global_planner" output="screen">
 		
 		<param name="pathDensity" 				value="$(arg pathDensity)" />
@@ -39,7 +37,7 @@
 		<param name="mapFileName" 				value="$(arg mapFileName)" />
 		<param name="lanelet2_origin" 			value="$(arg lanelet2_origin)" />		
 		<param name="destinationFileName" 		value="$(arg destinationFileName)" />
-		<param name="topicName"			 		value="$(arg topicName)" />	    
+			    
 	</node> 
 	
 </launch>
