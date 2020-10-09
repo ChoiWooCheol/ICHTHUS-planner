@@ -300,17 +300,22 @@ void VectorMapLoader::GetLanePoints(UtilityHNS::AisanLanesFileReader* pLaneData,
 					wp1.fromIds.push_back(_rID);
 			}
 
-			if(pL->LaneDir == 'L')
+			if(pL->LaneDir == 'L' || pL->LaneType == 1)
 			{
 				wp1.actionCost.push_back(std::make_pair(LEFT_TURN_ACTION, LEFT_INITIAL_TURNS_COST));
 			}
-			else  if(pL->LaneDir == 'R')
+			else  if(pL->LaneDir == 'R' || pL->LaneType == 2)
 			{
 				wp1.actionCost.push_back(std::make_pair(RIGHT_TURN_ACTION, RIGHT_INITIAL_TURNS_COST));
 			}
 			else
 			{
 				wp1.actionCost.push_back(std::make_pair(FORWARD_ACTION, 0));
+			}
+
+			if(pL->LaneType == 10 || pL->LaneType == 11 || pL->LaneType == 12)
+			{
+				wp1.custom_type = CUSTOM_AVOIDANCE_DISABLED;
 			}
 
 			WayPoint wp2;
@@ -346,17 +351,22 @@ void VectorMapLoader::GetLanePoints(UtilityHNS::AisanLanesFileReader* pLaneData,
 					wp2.toIds.push_back(_rID);
 			}
 
-			if(pL->LaneDir == 'L')
+			if(pL->LaneDir == 'L' || pL->LaneType == 1)
 			{
 				wp2.actionCost.push_back(std::make_pair(LEFT_TURN_ACTION, LEFT_INITIAL_TURNS_COST));
 			}
-			else  if(pL->LaneDir == 'R')
+			else  if(pL->LaneDir == 'R' || pL->LaneType == 2)
 			{
 				wp2.actionCost.push_back(std::make_pair(RIGHT_TURN_ACTION, RIGHT_INITIAL_TURNS_COST));
 			}
 			else
 			{
 				wp2.actionCost.push_back(std::make_pair(FORWARD_ACTION, 0));
+			}
+
+			if(pL->LaneType == 10 || pL->LaneType == 11 || pL->LaneType == 12)
+			{
+				wp2.custom_type = CUSTOM_AVOIDANCE_DISABLED;
 			}
 
 			wp1.toIds.push_back(wp2.id);
@@ -406,17 +416,22 @@ void VectorMapLoader::GetLanePoints(UtilityHNS::AisanLanesFileReader* pLaneData,
 					wp.toIds.push_back(_rID);
 			}
 
-			if(pL->LaneDir == 'L')
+			if(pL->LaneDir == 'L' || pL->LaneType == 1)
 			{
 				wp.actionCost.push_back(std::make_pair(LEFT_TURN_ACTION, LEFT_INITIAL_TURNS_COST));
 			}
-			else  if(pL->LaneDir == 'R')
+			else  if(pL->LaneDir == 'R' || pL->LaneType == 2)
 			{
 				wp.actionCost.push_back(std::make_pair(RIGHT_TURN_ACTION, RIGHT_INITIAL_TURNS_COST));
 			}
 			else
 			{
 				wp.actionCost.push_back(std::make_pair(FORWARD_ACTION, 0));
+			}
+
+			if(pL->LaneType == 10 || pL->LaneType == 11 || pL->LaneType == 12)
+			{
+				wp.custom_type = CUSTOM_AVOIDANCE_DISABLED;
 			}
 
 			wp.originalMapID = pL->LnID;
@@ -448,7 +463,7 @@ bool VectorMapLoader::GetPointFromDataList(UtilityHNS::AisanPointsFileReader* pP
 		out_wp.pos.lat = pP->B;
 		out_wp.pos.lon = pP->L;
 		out_wp.pos.alt = pP->H;
-		MappingHelpers::correct_gps_coor(out_wp.pos.lat, out_wp.pos.lon);
+		//MappingHelpers::correct_gps_coor(out_wp.pos.lat, out_wp.pos.lon);
 		return true;
 	}
 
@@ -839,12 +854,12 @@ void VectorMapLoader::ConstructRoadNetworkFromROSMessageVer0(UtilityHNS::MapRaw&
 
 		wp.originalMapID = curr_lane_point.originalMapID;
 
-		if(curr_lane_point.LaneDir == 'L')
+		if(curr_lane_point.LaneDir == 'L' || curr_lane_point.LaneType == 1)
 		{
 			wp.actionCost.push_back(std::make_pair(LEFT_TURN_ACTION, LEFT_INITIAL_TURNS_COST));
 			//std::cout << " Left Lane : " << curr_lane_point.LnID << std::endl ;
 		}
-		else  if(curr_lane_point.LaneDir == 'R')
+		else  if(curr_lane_point.LaneDir == 'R' || curr_lane_point.LaneType == 2)
 		{
 			wp.actionCost.push_back(std::make_pair(RIGHT_TURN_ACTION, RIGHT_INITIAL_TURNS_COST));
 			//std::cout << " Right Lane : " << curr_lane_point.LnID << std::endl ;
@@ -852,6 +867,11 @@ void VectorMapLoader::ConstructRoadNetworkFromROSMessageVer0(UtilityHNS::MapRaw&
 		else
 		{
 			wp.actionCost.push_back(std::make_pair(FORWARD_ACTION, 0));
+		}
+
+		if(curr_lane_point.LaneType == 10 || curr_lane_point.LaneType == 11 || curr_lane_point.LaneType == 12)
+		{
+			wp.custom_type = CUSTOM_AVOIDANCE_DISABLED;
 		}
 
 		wp.fromIds.push_back(curr_lane_point.BLID);

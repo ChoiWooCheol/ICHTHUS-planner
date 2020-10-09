@@ -11,6 +11,7 @@
 #include "RoadNetwork.h"
 #include "op_utility/DataRW.h"
 #include "tinyxml.h"
+#include "PlannerCommonDef.h"
 
 #define DISABLE_CARLA_SPECIAL_CODE
 
@@ -23,23 +24,16 @@ namespace PlannerHNS {
 #define LANE_CHANGE_SPEED_FACTOR 0.5
 #define LANE_CHANGE_COST 3.0 // meters
 //#define BACKUP_STRAIGHT_PLAN_DISTANCE 10 //meters
-//#define LANE_CHANGE_MIN_DISTANCE 15
-// #define LANE_CHANGE_MIN_DISTANCE 20
+#define LANE_CHANGE_MIN_DISTANCE 8
 
-// woocheol
-static int LANE_CHANGE_MIN_DISTANCE = 8;
-static double skip_distance = 15;
+static std::vector<WayPoint> m_branch_points; // woocheol
 
 class PlanningHelpers
 {
-
 public:
 	static std::vector<std::pair<GPSPoint, GPSPoint> > m_TestingClosestPoint;
 
 public:
-	// woocheol
-	void setChangeSmoothDistances(const double& current_vel);
-
 	PlanningHelpers();
 	virtual ~PlanningHelpers();
 
@@ -50,6 +44,9 @@ public:
 	 * @param end_range_distance
 	 * @return -1 if distance from currPose to the end of all paths is less than end_range_distance.
 	 */
+
+	static std::vector<WayPoint> getBranchPointPose(); // woocheol
+
 	static int CheckForEndOfPaths(const std::vector<std::vector<PlannerHNS::WayPoint> >& paths, const PlannerHNS::WayPoint& currPose, const double& end_range_distance);
 
 	static bool GetRelativeInfo(const std::vector<WayPoint>& trajectory, const WayPoint& p, RelativeInfo& info, const int& prevIndex = 0);
@@ -74,7 +71,7 @@ public:
 
 	static int GetClosestNextPointIndexDirectionFastV2(const std::vector<WayPoint>& trajectory, const WayPoint& p, const int& prevIndex = 0);
 
-	static int GetClosestPointIndex_obsolete(const std::vector<WayPoint>& trajectory, const WayPoint& p,const int& prevIndex = 0 );
+	static int GetClosestPointIndex(const std::vector<WayPoint>& trajectory, const WayPoint& p,const int& prevIndex = 0 );
 
 	static WayPoint GetPerpendicularOnTrajectory_obsolete(const std::vector<WayPoint>& trajectory, const WayPoint& p, double& distance, const int& prevIndex = 0);	static double GetPerpDistanceToTrajectorySimple_obsolete(const std::vector<WayPoint>& trajectory, const WayPoint& p, const int& prevIndex = 0);
 
@@ -128,7 +125,7 @@ public:
 			std::vector<std::vector<WayPoint> >& rollInPaths, const double& max_roll_distance,
 			const double& maxSpeed, const double&  carTipMargin, const double& rollInMargin,
 			const double& rollInSpeedFactor, const double& pathDensity, const double& rollOutDensity,
-			const int& rollOutNumber, const double& SmoothDataWeight, const double& SmoothWeight,
+			const int& rollOutsNumber, const double& SmoothDataWeight, const double& SmoothWeight,
 			const double& SmoothTolerance, const bool& bHeadingSmooth,
 			std::vector<WayPoint>& sampledPoints);
 
@@ -143,6 +140,8 @@ public:
 	static void SmoothGlobalPathSpeed(std::vector<WayPoint>& path);
 
 	static void GenerateRecommendedSpeed(std::vector<WayPoint>& path, const double& max_speed, const double& speedProfileFactor);
+
+	static void ShiftRecommendedSpeed(std::vector<WayPoint>& path, const double& max_speed, const double& curr_speed, const double& inc_ratio, const double& path_density);
 
 	static WayPoint* BuildPlanningSearchTreeV2(WayPoint* pStart,
 			const WayPoint& goalPos,
@@ -177,7 +176,13 @@ public:
 	static void TraversePathTreeBackwards(WayPoint* pHead, WayPoint* pStartWP, const std::vector<int>& globalPathIds,
 			std::vector<WayPoint>& localPath, std::vector<std::vector<WayPoint> >& localPaths);
 
-	static void ExtractPlanAlernatives(const std::vector<WayPoint>& singlePath, const double& plan_distance, std::vector<std::vector<WayPoint> >& allPaths);
+	static void ExtractPlanAlernatives(const std::vector<WayPoint>& singlePath, const double& plan_distance, std::vector<std::vector<WayPoint> >& allPaths, double lane_change_distance = 10);
+
+	static void ExtractPlanAlernativesV2(const std::vector<WayPoint>& singlePath, const double& plan_distance, const double& lane_change_distane, std::vector<std::vector<WayPoint> >& allPaths);
+
+	static void ExtractPlanAlernativesSection(const WayPoint& startPose, const double& plan_distance, std::vector<WayPoint>& path);
+
+	static void RemoveFromPathUntil(std::vector<WayPoint>& path, const double& distance);
 
 	static std::vector<int> GetUniqueLeftRightIds(const std::vector<WayPoint>& path);
 
@@ -208,6 +213,10 @@ public:
 	static std::string MakePathDirectionID(const std::vector<PlannerHNS::WayPoint>& _path);
 
 	static double GetDistanceFromPoseToEnd(const PlannerHNS::WayPoint& pose, const std::vector<WayPoint>& path);
+
+	static void InitializeSafetyPolygon(const PlannerHNS::WayPoint& curr_state, const PlannerHNS::CAR_BASIC_INFO& car_info,
+	                                                  const PlannerHNS::VehicleState& vehicle_state, const double& lateral_safe_d,
+	                                                  const double& long_safe_d, const bool& use_turning_angle, PlannerHNS::PolygonShape& car_border);
 
 	static int PointInsidePolygon(const std::vector<GPSPoint>& points,const GPSPoint& p);
 

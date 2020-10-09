@@ -217,7 +217,43 @@ void MappingHelpers::LinkTrafficLightsIntoGroups(RoadNetwork& map)
 	}
 }
 
-WayPoint* MappingHelpers::GetClosestWaypointFromMap(const WayPoint& pos, RoadNetwork& map, const bool bDirectionBased)
+WayPoint* MappingHelpers::GetClosestWaypointFromMapGPSVersion(const double& lat, const double& lon, RoadNetwork& map)
+{
+	WayPoint* pWaypoint = nullptr;
+	double min_dist_from_gps = 9999999;
+	double d_lat = 0.0;
+	double d_lon = 0.0;
+	double d_latlon = 0.0;
+
+	for(unsigned int j=0; j< map.roadSegments.size(); j ++)
+	{
+		for(unsigned int k=0; k< map.roadSegments.at(j).Lanes.size(); k ++)
+		{
+			Lane* pL = &map.roadSegments.at(j).Lanes.at(k);
+			for(int i = 0; i < pL->points.size(); i++)
+			{
+				// d_lat = (pL->points.at(i).pos.lat + 470000)  - (lat + 470000);
+				// d_lon = (pL->points.at(i).pos.lon + 3960000) - (lon + 3960000);
+
+				d_lat = (pL->points.at(i).pos.lat)  - (lat);
+				d_lon = (pL->points.at(i).pos.lon) - (lon );
+				std::cout.precision(12);
+				d_latlon = hypot(d_lat, d_lon);
+				
+				if(d_latlon < min_dist_from_gps)
+				{
+					pWaypoint = &pL->points.at(i);
+					min_dist_from_gps = d_latlon;
+				}
+			}
+		}
+	}
+
+	std::cout<<"min dist : "<<min_dist_from_gps<<std::endl;
+	return pWaypoint;
+}
+
+WayPoint* MappingHelpers::GetClosestWaypointFromMap(const WayPoint& pos, RoadNetwork& map, const bool& bDirectionBased)
 {
 	WayPoint* pWaypoint = nullptr;
 	double min_d = DBL_MAX;
@@ -255,7 +291,7 @@ WayPoint* MappingHelpers::GetClosestWaypointFromMap(const WayPoint& pos, RoadNet
 	return pWaypoint;
 }
 
-vector<WayPoint*> MappingHelpers::GetClosestWaypointsListFromMap(const WayPoint& pos, RoadNetwork& map, const double& distance, const bool bDirectionBased)
+vector<WayPoint*> MappingHelpers::GetClosestWaypointsListFromMap(const WayPoint& pos, RoadNetwork& map, const double& distance, const bool& bDirectionBased)
 {
 	vector<WayPoint*> waypoints_list;
 
@@ -338,7 +374,7 @@ std::vector<Lane*> MappingHelpers::GetClosestLanesFast(const WayPoint& center, R
 	return lanesList;
 }
 
-Lane* MappingHelpers::GetClosestLaneFromMap(const WayPoint& pos, RoadNetwork& map, const double& distance, const bool bDirectionBased)
+Lane* MappingHelpers::GetClosestLaneFromMap(const WayPoint& pos, RoadNetwork& map, const double& distance, const bool& bDirectionBased)
 {
 	Lane* pCloseLane = nullptr;
 	double min_d = DBL_MAX;
@@ -1421,68 +1457,117 @@ void MappingHelpers::LinkTrafficLightsAndStopLinesV2(RoadNetwork& map)
 	}
 }
 
+void MappingHelpers::FindAdjacentSingleLane(RoadNetwork& map, const int& lane_id, const int& dir,  const double& min_d, const double& max_d)
+{
+	Lane* pL =  GetLaneById(lane_id, map);
+	if(pL != nullptr)
+	{
+		for(auto& l: map.roadSegments.at(0).Lanes)
+		{
+			PlanningHelpers::CalcAngleAndCost(l.points);
+		}
+
+		for(auto& l2: map.roadSegments.at(0).Lanes)
+		{
+			if(pL->id != l2.id)
+			{
+				for(auto& wp1: pL->points)
+				{
+					RelativeInfo info;
+					PlanningHelpers::GetRelativeInfoLimited(l2.points, wp1, info);
+					double angle_diff = UtilityHNS::UtilityH::AngleBetweenTwoAnglesPositive(info.perp_point.pos.a, wp1.pos.a)*RAD2DEG;
+					if(fabs(info.perp_distance) > min_d && fabs(info.perp_distance) < max_d && !info.bAfter && !info.bBefore && angle_diff < 10)
+					{
+						WayPoint* wp2 = &l2.points.at(info.iFront);
+						if(info.perp_distance < 0 && (dir == 0 || dir == 2))
+						{
+							pL->lane_change = 1;
+							l2.lane_change = 1;
+
+							wp1.pRight = wp2;
+							wp1.RightPointId = wp2->id;
+							wp1.RightLnId = l2.id;
+							pL->pRightLane = &l2;
+
+							wp2->pLeft = &wp1;
+							wp2->LeftPointId = wp1.id;
+							wp2->LeftLnId = pL->id;
+							l2.pLeftLane = pL;
+						}
+						else if(info.perp_distance >= 0 && (dir == 0 || dir == 1))
+						{
+							pL->lane_change = 1;
+							l2.lane_change = 1;
+
+							wp1.pLeft = wp2;
+							wp1.LeftPointId = wp2->id;
+							wp1.LeftLnId = l2.id;
+							pL->pLeftLane = &l2;
+
+							wp2->pRight = &wp1;
+							wp2->RightPointId = wp1.id;
+							wp2->RightLnId = pL->id;
+							l2.pRightLane = pL;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 void MappingHelpers::FindAdjacentLanesV2(RoadNetwork& map, const double& min_d, const double& max_d )
 {
-	for(unsigned int rs = 0; rs < map.roadSegments.size(); rs++)
+	if(map.roadSegments.size() == 0) return;
+	//Fix The angle for all lane's waypoints
+
+	for(auto& l: map.roadSegments.at(0).Lanes)
 	{
-		for(unsigned int i =0; i < map.roadSegments.at(rs).Lanes.size(); i++)
+		PlanningHelpers::CalcAngleAndCost(l.points);
+	}
+
+	for(auto& l1: map.roadSegments.at(0).Lanes)
+	{
+		for(auto& l2: map.roadSegments.at(0).Lanes)
 		{
-			Lane* pL = &map.roadSegments.at(rs).Lanes.at(i);
-			for(unsigned int i2 =0; i2 < map.roadSegments.at(rs).Lanes.size(); i2++)
+			if(l1.id != l2.id)
 			{
-				Lane* pL2 = &map.roadSegments.at(rs).Lanes.at(i2);
-
-				if(pL->id == pL2->id) continue;
-
-				for(unsigned int p=0; p < pL->points.size(); p++)
+				for(auto& wp1: l1.points)
 				{
-					WayPoint* pWP = &pL->points.at(p);
 					RelativeInfo info;
-					PlanningHelpers::GetRelativeInfoLimited(pL2->points, *pWP, info);
+					PlanningHelpers::GetRelativeInfoLimited(l2.points, wp1, info);
 
-					if(!info.bAfter && !info.bBefore && fabs(info.perp_distance) > min_d && fabs(info.perp_distance) < max_d && UtilityHNS::UtilityH::AngleBetweenTwoAnglesPositive(info.perp_point.pos.a, pWP->pos.a) < 0.06)
+					double angle_diff = UtilityHNS::UtilityH::AngleBetweenTwoAnglesPositive(info.perp_point.pos.a, wp1.pos.a)*RAD2DEG;
+					if(fabs(info.perp_distance) > min_d && fabs(info.perp_distance) < max_d && !info.bAfter && !info.bBefore && angle_diff < 10)
 					{
-						WayPoint* pWP2 = &pL2->points.at(info.iFront);
+						l1.lane_change = 1;
+						l2.lane_change = 1;
+
+						WayPoint* wp2 = &l2.points.at(info.iFront);
+
 						if(info.perp_distance < 0)
 						{
-							if(pWP->pRight == 0)
-							{
-								pWP->pRight = pWP2;
-								pWP->RightPointId = pWP2->id;
-								pWP->RightLnId = pL2->id;
-								pL->pRightLane = pL2;
-								pL->lane_change = 1;
+							wp1.pRight = wp2;
+							wp1.RightPointId = wp2->id;
+							wp1.RightLnId = l2.id;
+							l1.pRightLane = &l2;
 
-							}
-
-							if(pWP2->pLeft == 0)
-							{
-								pWP2->pLeft = pWP;
-								pWP2->LeftPointId = pWP->id;
-								pWP2->LeftLnId = pL->id;
-								pL2->pLeftLane = pL;
-								pL2->lane_change = 1;
-							}
+							wp2->pLeft = &wp1;
+							wp2->LeftPointId = wp1.id;
+							wp2->LeftLnId = l1.id;
+							l2.pLeftLane = &l1;
 						}
 						else
 						{
-							if(pWP->pLeft == 0)
-							{
-								pWP->pLeft = pWP2;
-								pWP->LeftPointId = pWP2->id;
-								pWP->LeftLnId = pL2->id;
-								pL->pLeftLane = pL2;
-								pL->lane_change = 1;
-							}
+							wp1.pLeft = wp2;
+							wp1.LeftPointId = wp2->id;
+							wp1.LeftLnId = l2.id;
+							l1.pLeftLane = &l2;
 
-							if(pWP2->pRight == 0)
-							{
-								pWP2->pRight = pWP;
-								pWP2->RightPointId = pWP->id;
-								pWP2->RightLnId = pL->id;
-								pL2->pRightLane = pL;
-								pL2->lane_change = 1;
-							}
+							wp2->pRight = &wp1;
+							wp2->RightPointId = wp1.id;
+							wp2->RightLnId = l1.id;
+							l2.pRightLane = &l1;
 						}
 					}
 				}

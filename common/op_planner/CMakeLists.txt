@@ -61,6 +61,7 @@ set(PLANNERH_SRC
 	src/RoadNetwork.cpp
 	src/hmi/HMIMSG.cpp
 	src/control/op_controller.cpp
+	src/control/op_acc.cpp
 )
 
 ## Declare a cpp library
@@ -82,14 +83,3 @@ install(TARGETS op_planner
 	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
-#if (CATKIN_ENABLE_TESTING)
-	#
-	#roslint_add_test()
-#find_package(rostest REQUIRED)
-#
-#add_rostest_gtest(test-op_planner_hmi test/test_op_planner_hmi.test test/src/test_op_planner_hmi.cpp )
-#add_dependencies(test-op_planner_hmi ${catkin_EXPORTED_TARGETS})
-#target_link_libraries(test-op_planner_hmi ${catkin_LIBRARIES} ${PROJECT_NAME})
-#
-#endif ()

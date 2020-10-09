@@ -37,6 +37,12 @@ static EnumString<BOUNDARY_TYPE> BOUNDARY_TYPE_STR(NORMAL_ROAD_BOUNDARY,
 				{EXIT_BOUNDARY, "Exit"},
 		});
 
+static EnumString<CustomBehaviorType> CustomBehaviorTypeStr(CUSTOM_AVOIDANCE_DISABLED,
+		{
+				{CUSTOM_AVOIDANCE_DISABLED, "Disabled"},
+				{CUSTOM_AVOIDANCE_ENABLED, "Enabled"}
+		});
+
 class MappingHelpers {
 public:
 	MappingHelpers();
@@ -46,17 +52,28 @@ public:
 
 	static void LinkTrafficLightsIntoGroups(RoadNetwork& map);
 
-	static Lane* GetClosestLaneFromMap(const WayPoint& pos, RoadNetwork& map, const double& distance = 5.0, const bool bDirectionBased = true);
-	static WayPoint* GetClosestWaypointFromMap(const WayPoint& pos, RoadNetwork& map, const bool bDirectionBased = true);
+	static Lane* GetClosestLaneFromMap(const WayPoint& pos, RoadNetwork& map, const double& distance = 5.0, const bool& bDirectionBased = true);
+	static WayPoint* GetClosestWaypointFromMap(const WayPoint& pos, RoadNetwork& map, const bool& bDirectionBased = true);
 	static std::vector<Lane*> GetClosestLanesFast(const WayPoint& pos, RoadNetwork& map, const double& distance = 10.0);
 
-	static std::vector<WayPoint*> GetClosestWaypointsListFromMap(const WayPoint& center, RoadNetwork& map, const double& distance = 2.0, const bool bDirectionBased = true);
+	static std::vector<WayPoint*> GetClosestWaypointsListFromMap(const WayPoint& center, RoadNetwork& map, const double& distance = 2.0, const bool& bDirectionBased = true);
 
 	static WayPoint* GetClosestBackWaypointFromMap(const WayPoint& pos, RoadNetwork& map);
+	static WayPoint* GetClosestWaypointFromMapGPSVersion(const double& lat, const double& lon, RoadNetwork& map); //taeho
 	static WayPoint GetFirstWaypoint(RoadNetwork& map);
 	static WayPoint* GetLastWaypoint(RoadNetwork& map);
 	static void FindAdjacentLanes(RoadNetwork& map);
-	static void FindAdjacentLanesV2(RoadNetwork& map, const double& min_d = 1.2, const double& max_d = 5.5);
+	static void FindAdjacentLanesV2(RoadNetwork& map, const double& min_d = 1.2, const double& max_d = 4.5);
+	/**
+	 *
+	 *
+	 * @param map
+	 * @param lane_id
+	 * @param dir = 0 for both left and right, = 1 for left lane, = 2 for right lane
+	 * @param min_d
+	 * @param max_d
+	 */
+	static void FindAdjacentSingleLane(RoadNetwork& map, const int& lane_id, const int& dir,  const double& min_d = 1.2, const double& max_d = 3.5);
 
 	static void ConnectBoundariesToWayPoints(RoadNetwork& map);
 

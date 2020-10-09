@@ -29,7 +29,7 @@ void TrajectoryEvaluator::SetEvalParams(const EvaluationParams& eval_param)
 
 TrajectoryCost TrajectoryEvaluator::doOneStep(const std::vector<std::vector<WayPoint> >& roll_outs,
                                               const std::vector<WayPoint>& total_paths, const WayPoint& curr_state,
-                                              const PlanningParams& params, const CAR_BASIC_INFO& car_info,
+                                              const PlanningParams& original_params, const CAR_BASIC_INFO& car_info,
                                               const VehicleState& vehicle_state,
                                               const std::vector<DetectedObject>& obj_list,
                                               const bool& b_static_only,
@@ -44,6 +44,13 @@ TrajectoryCost TrajectoryEvaluator::doOneStep(const std::vector<std::vector<WayP
 //	{
 //		std::cout << "Received paths: " <<  roll_outs.size() << ", Points: " << total_paths.size() << std::endl;
 //	}
+
+	PlanningParams params = original_params;
+
+	if(roll_outs.size() == 1)
+	{
+		params.rollOutNumber = 0;
+	}
 
 	double critical_lateral_distance = car_info.width / 2.0 + params.horizontalSafetyDistancel;
   double critical_long_front_distance = car_info.wheel_base / 2.0 + car_info.length / 2.0

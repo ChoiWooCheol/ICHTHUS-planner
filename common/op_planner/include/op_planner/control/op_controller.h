@@ -39,6 +39,9 @@ public:
 	int VeclocityControllerUpdateTwoPID(const double& dt, const PlannerHNS::VehicleState& CurrStatus,
 			const PlannerHNS::BehaviorState& CurrBehavior, double& desiredAccel, double& desiredBrake, PlannerHNS::SHIFT_POS& desiredShift);
 
+	int VeclocityControllerUpdateForOpenPlannerInternalACC(const double& dt, const PlannerHNS::VehicleState& CurrStatus,
+			const PlannerHNS::BehaviorState& CurrBehavior, double& desiredAccel, double& desiredBrake, PlannerHNS::SHIFT_POS& desiredShift);
+
 	void Init(const PlannerHNS::ControllerParams& params, const PlannerHNS::CAR_BASIC_INFO& vehicleInfo, bool bEnableLogs = false, bool bCalibration = false);
 
 	PlannerHNS::ExtendedVehicleState DoOneStep(const double& dt, const PlannerHNS::BehaviorState& behavior,
@@ -52,6 +55,7 @@ public:
 	PlannerHNS::WayPoint m_FollowMePoint;
 	double m_FollowingDistance;
 	std::string m_ExperimentFolderName;
+	bool m_bUseInternalOpACC;
 
 private:
 	PlannerHNS::ControllerParams m_Params;

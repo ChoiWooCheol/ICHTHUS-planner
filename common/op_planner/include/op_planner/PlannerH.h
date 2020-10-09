@@ -7,7 +7,7 @@
 
 #define START_POINT_MAX_DISTANCE 8 // meters
 #define GOAL_POINT_MAX_DISTANCE 8 // meters
-#define LANE_CHANGE_SMOOTH_FACTOR_DISTANCE 8 // meters
+#define LANE_CHANGE_SMOOTH_FACTOR_DISTANCE 25 // meters
 
 #include "RoadNetwork.h"
 

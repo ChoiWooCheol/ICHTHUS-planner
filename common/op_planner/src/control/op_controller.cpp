@@ -15,6 +15,7 @@ namespace PlannerHNS
 
 MotionControl::MotionControl()
 {
+	m_bUseInternalOpACC = false;
 	m_TargetAngle = 0;
 	m_TargetSpeed = 0;
 	m_PrevAngleError = 0;
@@ -130,7 +131,7 @@ bool MotionControl::FindNextWayPoint(const std::vector<PlannerHNS::WayPoint>& pa
 {
 	if(path.size()==0) return false;
 
-	follow_distance = fabs(velocity*1.2);
+	follow_distance = m_Params.minPursuiteDistance + fabs(velocity);
 
 	if(follow_distance < m_Params.minPursuiteDistance)
 	{
@@ -346,6 +347,39 @@ void MotionControl::CalculateVelocityDesired(const double& dt, const PlannerHNS:
 	acc_d = desired_acceleration;
 }
 
+int MotionControl::VeclocityControllerUpdateForOpenPlannerInternalACC(const double& dt, const PlannerHNS::VehicleState& CurrStatus,
+		const PlannerHNS::BehaviorState& CurrBehavior, double& desiredAccel, double& desiredBrake, PlannerHNS::SHIFT_POS& desiredShift)
+{
+	double e_v = 0;
+	double desired_velocity = CurrBehavior.maxVelocity;
+	e_v = (desired_velocity - CurrStatus.speed); //Target max velocity error
+
+	desiredAccel = m_pidAccel.getTimeDependentPID(e_v, dt);
+	if(e_v < 0 && desiredAccel < 0.5)
+	{
+		desiredBrake = m_pidBrake.getTimeDependentPID(-e_v, dt);
+		m_pidAccel.Reset();
+	}
+	else
+	{
+		m_pidBrake.Reset();
+		desiredBrake = 0;
+	}
+
+	desiredShift = PlannerHNS::SHIFT_POS_DD;
+
+	m_TargetSpeed = desired_velocity;
+	m_TargetAcceleration = 0;
+	m_PrevSpeedError = e_v;
+	m_PrevDistanceError = 0;
+	m_DesiredDistance = 0;
+	m_DesiredSafeDistance = 0;
+	m_PredictedVelMinusRealVel = 0;
+
+	return 1;
+
+}
+
 int MotionControl::VeclocityControllerUpdateTwoPID(const double& dt, const PlannerHNS::VehicleState& CurrStatus,
 		const PlannerHNS::BehaviorState& CurrBehavior, double& desiredAccel, double& desiredBrake, PlannerHNS::SHIFT_POS& desiredShift)
 {
@@ -458,7 +492,14 @@ PlannerHNS::ExtendedVehicleState MotionControl::DoOneStep(const double& dt, cons
 	{
 		double lateral_err = 0;
 		FindNextWayPoint(m_Path, currPose, vehicleState.speed, m_FollowMePoint, m_PerpendicularPoint, lateral_err, m_FollowingDistance);
-		VeclocityControllerUpdateTwoPID(dt, vehicleState, behavior, desiredState.accel_stroke, desiredState.brake_stroke, desiredState.shift);
+		if(m_bUseInternalOpACC)
+		{
+			VeclocityControllerUpdateForOpenPlannerInternalACC(dt, vehicleState, behavior, desiredState.accel_stroke, desiredState.brake_stroke, desiredState.shift);
+		}
+		else
+		{
+			VeclocityControllerUpdateTwoPID(dt, vehicleState, behavior, desiredState.accel_stroke, desiredState.brake_stroke, desiredState.shift);
+		}
 		SteerControllerUpdate(dt, currPose, m_FollowMePoint, vehicleState, behavior, lateral_err, desiredState.steer_torque);
 		m_LateralError = lateral_err;
 	}

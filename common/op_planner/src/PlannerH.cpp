@@ -46,7 +46,7 @@ void PlannerH::GenerateRunoffTrajectory(const std::vector<std::vector<WayPoint> 
 		{
 			PlanningHelpers::CalculateRollInTrajectories(carPos, speed, referencePaths.at(i), s_index, e_index, e_distances,
 					local_rollOutPaths, microPlanDistance, maxSpeed, carTipMargin, rollInMargin,
-					rollInSpeedFactor, pathDensity, rollOutDensity,rollOutNumber,
+					rollInSpeedFactor, pathDensity, rollOutDensity, rollOutNumber,
 					SmoothDataWeight, SmoothWeight, SmoothTolerance, bHeadingSmooth, sampledPoints_debug);
 		}
 		else
@@ -141,7 +141,6 @@ double PlannerH::PlanUsingDP(const WayPoint& start,
 {
 	PlannerHNS::WayPoint* pStart = PlannerHNS::MappingHelpers::GetClosestWaypointFromMap(start, map);
 	PlannerHNS::WayPoint* pGoal = PlannerHNS::MappingHelpers::GetClosestWaypointFromMap(goalPos, map);
-	bool bEnableGoalBranching = false;
 
 	if(!pStart ||  !pGoal)
 	{
@@ -224,11 +223,16 @@ double PlannerH::PlanUsingDP(const WayPoint& start,
 	PlanningHelpers::TraversePathTreeBackwards(pLaneCell, pStart, globalPath, path, tempCurrentForwardPathss);
 	if(path.size()==0) return 0;
 
-	paths.clear();
+	/**
+	 * Next line is added on 27 September 2020, when planning with map with sparse waypoints, skipping the start waypoint is a problem,
+	 * so I inserted after generating the initial plan
+	 */
+	path.insert(path.begin(), *pStart);
 
+	paths.clear();
 	if(bPlan == 'A')
 	{
-		PlanningHelpers::ExtractPlanAlernatives(path, planning_distance, paths);
+		PlanningHelpers::ExtractPlanAlernatives(path, planning_distance, paths, LANE_CHANGE_SMOOTH_FACTOR_DISTANCE);
 	}
 	else if (bPlan == 'B')
 	{

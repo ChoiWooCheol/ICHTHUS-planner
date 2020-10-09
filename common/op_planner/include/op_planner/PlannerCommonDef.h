@@ -50,6 +50,7 @@ public:
 	PID_CONST Velocity_Gain;
 	PID_CONST Accel_Gain;
 	PID_CONST Brake_Gain;
+	PID_CONST Follow_Gain;
 
 	double accel_init_delay;
 	double accel_avg_delay;
@@ -58,6 +59,10 @@ public:
 	double brake_init_delay;
 	double brake_avg_delay;
 	double avg_deceleration;
+
+	double accelPushRatio;
+	double brakePushRatio;
+	double curveSlowDownRatio;
 
 	ControllerParams()
 	{
@@ -76,6 +81,10 @@ public:
 		brake_init_delay = 0.01;
 		brake_avg_delay = 0.01;
 		avg_deceleration = -1.0;
+
+		accelPushRatio = 1.0;
+		brakePushRatio = 1.0;
+		curveSlowDownRatio = 1.0;
 	}
 };
 
@@ -86,8 +95,11 @@ public:
 
   double turning_radius = 5.2; // meters
   double wheel_base = 2.7; // meters
-  double length = 4.3; // meters
+  double length = 4.54; // meters
   double width = 1.82; // meters
+  double front_length = 0.96;
+  double back_length = 0.89;
+  double height = 1.47;
 
   double max_speed_forward = 10; // m/s
   double min_speed_forward = 0.0; // m/s speed that is considered stopping, to avoid small speed noise

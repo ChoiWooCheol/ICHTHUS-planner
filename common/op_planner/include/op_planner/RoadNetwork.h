@@ -98,6 +98,8 @@ enum MARKING_TYPE {UNKNOWN_MARK, TEXT_MARK, AF_MARK, AL_MARK, AR_MARK, AFL_MARK,
 
 enum LaneType{NORMAL_LANE, MERGE_LANE, EXIT_LANE, BUS_LANE, BUS_STOP_LANE, EMERGENCY_LANE};
 
+enum CustomBehaviorType{CUSTOM_AVOIDANCE_DISABLED = 0, CUSTOM_AVOIDANCE_ENABLED = 1};
+
 enum MARKING_COLOR{MARK_COLOR_WHITE, MARK_COLOR_YELLOW, MARK_COLOR_RED, MARK_COLOR_ORANG, MARK_COLOR_BLUE};
 
 enum LINE_TYPE{DEFAULT_WHITE_LINE, CONTINUOUS_LINE, SEPARATION_LINE, SUPPORT_LINE, GENERAL_LINE};
@@ -425,6 +427,7 @@ public:
 	int 		LeftLnId;
 	int 		RightLnId;
 	int 		stopLineID;
+	CustomBehaviorType custom_type;
 	DIRECTION_TYPE bDir;
 	STATE_TYPE	state;
 	BEH_STATE_TYPE beh_state;
@@ -464,6 +467,7 @@ public:
 		collisionCost = 0;
 		laneChangeCost = 0;
 		stopLineID = -1;
+		custom_type = CUSTOM_AVOIDANCE_ENABLED;
 		state = INITIAL_STATE;
 		beh_state = BEH_STOPPING_STATE;
 		iOriginalIndex = 0;
@@ -489,6 +493,7 @@ public:
 		pLeft = nullptr;
 		pRight = nullptr;
 		pBoundary = nullptr;
+		custom_type = CUSTOM_AVOIDANCE_ENABLED;
 		bDir = FORWARD_DIR;
 		LeftPointId = 0;
 		RightPointId = 0;
@@ -1204,7 +1209,7 @@ public:
 		currentLaneID = -1;
 		originalLaneID = -1;
 		iCurrSafeLane = -1;
-		iPrevSafeLane = -1;
+		iPrevSafeLane = 0;
 
 		indicator = INDICATOR_NONE;
 

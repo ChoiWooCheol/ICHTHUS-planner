@@ -679,7 +679,63 @@ std::vector<Lane> KmlMapLoader::GetLanesList(TiXmlElement* pElem)
 			ll.num = GetIDsFromPrefix(tfID, "NUM", "From").at(0);
 			ll.fromIds = GetIDsFromPrefix(tfID, "From", "To");
 			ll.toIds = GetIDsFromPrefix(tfID, "To", "Vel");
-			ll.speed = GetDoubleFromPrefix(tfID, "Vel", "").at(0);
+			std::vector<double> frac_ids;
+			frac_ids = GetDoubleFromPrefix(tfID, "Vel", "Width");
+			if(frac_ids.size() > 0)
+			{
+				ll.speed = frac_ids.at(0);
+			}
+			else
+			{
+				frac_ids = GetDoubleFromPrefix(tfID, "Vel", "");
+				if(frac_ids.size() > 0)
+				{
+					ll.speed = frac_ids.at(0);
+				}
+			}
+
+			frac_ids = GetDoubleFromPrefix(tfID, "Width", "Type");
+			if(frac_ids.size()>0)
+			{
+				ll.width = frac_ids.at(0);
+			}
+
+			std::vector<int> num_ids;
+			num_ids = GetIDsFromPrefix(tfID, "Type", "Change");
+			if(num_ids.size() > 0)
+			{
+				if(num_ids.at(0) == 1)
+				{
+					ll.type = MERGE_LANE;
+				}
+				else if(num_ids.at(0) == 2)
+				{
+					ll.type = EXIT_LANE;
+				}
+				else if(num_ids.at(0) == 3)
+				{
+					ll.type = BUS_LANE;
+				}
+				else if(num_ids.at(0) == 4)
+				{
+					ll.type = BUS_STOP_LANE;
+				}
+				else if(num_ids.at(0) == 5)
+				{
+					ll.type = EMERGENCY_LANE;
+				}
+				else
+				{
+					ll.type = NORMAL_LANE;
+				}
+			}
+
+			num_ids = GetIDsFromPrefix(tfID, "Change", "");
+			if(num_ids.size()>0)
+			{
+				ll.lane_change = num_ids.at(0);
+			}
+
 	if(_map_version == 0)
 			ll.points = GetCenterLaneDataVer0(pE, ll.id);
 	else
@@ -847,10 +903,51 @@ std::vector<WayPoint> KmlMapLoader::GetCenterLaneData(TiXmlElement* pElem, const
 					gps_points.at(i).v =  dnums.at(0);
 				}
 
-				dnums = GetDoubleFromPrefix(add_info_list.at(i), "Dir", "");
+				dnums = GetDoubleFromPrefix(add_info_list.at(i), "Dir", "Wid");
 				if(dnums.size() > 0)
 				{
 					gps_points.at(i).pos.a = gps_points.at(i).pos.dir =  dnums.at(0);
+				}
+				else
+				{
+					dnums = GetDoubleFromPrefix(add_info_list.at(i), "Dir", "");
+					if(dnums.size() > 0)
+					{
+						gps_points.at(i).pos.a = gps_points.at(i).pos.dir =  dnums.at(0);
+					}
+				}
+
+				dnums = GetDoubleFromPrefix(add_info_list.at(i), "Wid", "SLine");
+				if(dnums.size() > 0)
+				{
+					gps_points.at(i).width = dnums.at(0);
+				}
+				else
+				{
+					dnums = GetDoubleFromPrefix(add_info_list.at(i), "Wid", "");
+					if(dnums.size() > 0)
+					{
+						gps_points.at(i).width = dnums.at(0);
+					}
+				}
+
+				ids = GetIDsFromPrefix(add_info_list.at(i), "SLine", "CType");
+				if(ids.size() > 0)
+				{
+					gps_points.at(i).stopLineID = ids.at(0);
+				}
+
+				ids = GetIDsFromPrefix(add_info_list.at(i), "CType", "");
+				if(ids.size() > 0)
+				{
+					if(ids.at(0) == 0)
+					{
+						gps_points.at(i).custom_type = CUSTOM_AVOIDANCE_DISABLED;
+					}
+					else if(ids.at(0) == 1)
+					{
+						gps_points.at(i).custom_type = CUSTOM_AVOIDANCE_ENABLED;
+					}
 				}
 			}
 		}
