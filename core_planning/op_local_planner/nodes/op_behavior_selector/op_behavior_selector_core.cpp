@@ -64,6 +64,7 @@ BehaviorGen::BehaviorGen()
 
 
 	sub_LaneBranchArray = nh.subscribe("/lane_branch_array", 1, &BehaviorGen::callbackLaneBranchArray, this); // woocheol
+	sub_ConnectedTrafficSignal = nh.subscribe("/connected_traffic_signal", 1, &BehaviorGen::callbackConnectedTrafficSignal, this); // woocheol
 	//Path Planning Section
 	//----------------------------
 	sub_GlobalPlannerPaths = nh.subscribe("/lane_waypoints_array", 1, &BehaviorGen::callbackGetGlobalPlannerPath, this);
@@ -831,6 +832,7 @@ void BehaviorGen::LogLocalPlanningInfo(double dt)
 	}
 }
 
+
 void BehaviorGen::InsertNewActualPathPair(const double& min_record_distance)
 {
 	bool bInsertNew = false;
@@ -885,9 +887,9 @@ void BehaviorGen::decisionLaneChangeDecelerate()
 	bool is_egolane 	= (m_ego_lane_id == m_curr_lane_id);
 
 	double m_skip_distance_margin = 30.0 + 5.0;
-	std::cout << "dd : " << dd << std::endl;
-	std::cout << "nearest_distance : " << nearest_distance << std::endl;
-	if(dd < 0.0 && (m_skip_distance_margin - 1 < nearest_distance && nearest_distance < m_skip_distance_margin) && !is_egolane)
+	// std::cout << "dd : " << dd << std::endl;
+	// std::cout << "nearest_distance : " << nearest_distance << std::endl;
+	if(dd < 0.0 && (m_skip_distance_margin - 1 < nearest_distance && nearest_distance < m_skip_distance_margin) && m_ego_lane_id > 1)
 	{
 		std_msgs::Bool replan_req;
 		replan_req.data = true;
@@ -895,6 +897,7 @@ void BehaviorGen::decisionLaneChangeDecelerate()
 		std::cout << "MOVING OUT REPLAN" << std::endl;
 	}
 
+	/*
 	if(is_egolane)
 	{
 		m_BehaviorGenerator.m_lanechange_deceleration = false;
@@ -915,9 +918,34 @@ void BehaviorGen::decisionLaneChangeDecelerate()
 		m_BehaviorGenerator.m_lanechange_deceleration = false;
 		// std::cout << "if 3" << std::endl;
 	}
-		
+	*/
 	
 	prev_nearest_dist = nearest_distance;
+} // woocheol
+
+void BehaviorGen::callbackConnectedTrafficSignal(const alpha_city_msgs::connected_signal& msg)
+{
+	alpha_city_msgs::t_signal current_sig;
+	int cnt = 0;
+	for(auto& sig : msg.signals)
+	{
+		m_BehaviorGenerator.m_pCurrentBehaviorState->GetCalcParams()->stoppingDistances.push_back(sig.distance);
+		if(cnt == 0)
+		{
+			current_sig = sig;
+		}
+		else
+		{
+			if(current_sig.distance > sig.distance)
+			{
+				current_sig = sig;
+			}
+		}
+		
+	}
+	m_IchthusTrafficSignal.sid = current_sig.sid;
+	m_IchthusTrafficSignal.distance = current_sig.distance;
+	m_IchthusTrafficSignal.isRed = !current_sig.sig;
 } // woocheol
 
 void BehaviorGen::MainLoop()
@@ -981,7 +1009,7 @@ void BehaviorGen::MainLoop()
 			m_BehaviorGenerator.UpdateAvoidanceParams(m_PlanningParams.enableSwerving, m_PlanningParams.rollOutNumber);
 #endif
 
-			m_CurrentBehavior = m_BehaviorGenerator.DoOneStep(avg_dt, m_CurrentPos, m_VehicleStatus, m_CurrTrafficLight, m_TrajectoryBestCost, 0 );
+			m_CurrentBehavior = m_BehaviorGenerator.DoOneStep(avg_dt, m_CurrentPos, m_VehicleStatus, m_CurrTrafficLight, m_TrajectoryBestCost, 0, m_IchthusTrafficSignal); // woocheol
 
 			if(m_bShowActualDrivingPath)
 			{
